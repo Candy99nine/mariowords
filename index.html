@@ -1,0 +1,2134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>单词大冒险 · 马里奥闯关英语复习</title>
+<style>
+:root{--ink:#1c1c1c;--sky:#5c94fc;--gold:#ffd94a;--cream:#fff6df}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none}
+html,body{min-height:100%}
+body{background:#101010;font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);overflow-x:hidden}
+button{font-family:inherit;touch-action:manipulation}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
+
+.screen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:16px}
+.screen.active{display:flex}
+
+/* ===== 通用按钮 ===== */
+.btn{font-weight:800;font-size:16px;border:3px solid var(--ink);background:var(--gold);color:var(--ink);
+ padding:10px 18px;cursor:pointer;border-radius:8px;box-shadow:0 4px 0 var(--ink);transition:transform .05s}
+.btn:active{transform:translateY(3px);box-shadow:0 1px 0 var(--ink)}
+.btn.primary{background:#7ed957}
+.btn.red{background:#ff6b5e}
+.btn.blue{background:#7ab8ff}
+.btn.green{background:#7ed957}
+.btn.gray{background:#dcd6c8}
+.btn.small{font-size:14px;padding:7px 12px}
+.btn.mini{font-size:13px;padding:4px 10px;box-shadow:0 3px 0 var(--ink)}
+.btn.big{font-size:22px;padding:14px 26px;border-radius:12px}
+.btn small{display:block;font-size:12px;font-weight:600;margin-top:4px;opacity:.75}
+.btn:disabled{opacity:.5;cursor:default}
+
+/* ===== 标题页 ===== */
+#scr-title{background:linear-gradient(var(--sky) 0 62%,#3ea23e 62% 100%);position:relative;overflow:hidden}
+.titlewrap{text-align:center;position:relative;z-index:2;max-width:720px;width:100%}
+.logo{font-size:clamp(38px,7vw,60px);font-weight:900;color:var(--gold);letter-spacing:8px;
+ text-shadow:3px 3px 0 #b3541e,6px 6px 0 rgba(0,0,0,.35);-webkit-text-stroke:2px #1c1c1c;paint-order:stroke}
+.logo-sub{color:#fff;font-weight:800;margin:8px 0 4px;text-shadow:2px 2px 0 rgba(0,0,0,.4)}
+#title-scene{position:relative;height:120px;margin:10px auto 14px;width:min(560px,94%)}
+.tfloat{position:absolute;animation:float 2s ease-in-out infinite}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+.tbob{animation:bob .7s steps(2) infinite}
+@keyframes bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+.modebtns{display:flex;gap:16px;justify-content:center;flex-wrap:wrap}
+.titlerow{display:flex;gap:10px;justify-content:center;margin-top:14px;flex-wrap:wrap}
+.bankline{margin-top:12px;color:#fff;font-size:13px;font-weight:700;text-shadow:1px 1px 0 rgba(0,0,0,.5)}
+
+/* ===== 选关页 ===== */
+#scr-select{background:linear-gradient(var(--sky) 0 100%)}
+.panel{background:var(--cream);border:4px solid var(--ink);border-radius:12px;box-shadow:0 8px 0 rgba(0,0,0,.4);padding:20px 22px}
+.selpanel{width:min(720px,96vw)}
+.selhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.selhead h2{font-size:22px;flex:1}
+.modepill{background:var(--gold);border:3px solid var(--ink);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:800}
+.lvgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:16px}
+@media(max-width:560px){.lvgrid{grid-template-columns:1fr}}
+.lvcard{display:flex;flex-direction:column;gap:6px;text-align:left;background:#fff;border:3px solid var(--ink);
+ border-radius:10px;padding:14px;cursor:pointer;box-shadow:0 4px 0 var(--ink);transition:transform .06s;font-size:14px}
+.lvcard:hover{transform:translateY(-2px)}
+.lvcard:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.lvcard b{font-size:16px}
+.lvcard .lvic{font-size:30px;line-height:1}
+.lvcard .lvdesc{color:#666;font-size:13px;line-height:1.5}
+.lvcard:nth-child(1){border-top:8px solid var(--gold)}
+.lvcard:nth-child(2){border-top:8px solid #ff8a1e}
+.lvcard:nth-child(3){border-top:8px solid #a05cd6}
+.lvcard:nth-child(4){border-top:8px solid #3ea23e}
+.selbank{margin-top:14px;font-size:13px;color:#777;text-align:center}
+
+/* ===== 游戏窗口 ===== */
+.gamewin{width:min(1120px,100%)}
+.topbar{display:flex;align-items:center;gap:10px;background:var(--cream);border:4px solid var(--ink);
+ border-bottom:none;border-radius:12px 12px 0 0;padding:8px 12px;font-weight:800;flex-wrap:wrap}
+.tb-left{display:flex;align-items:center;gap:10px;min-width:0}
+.tb-title{font-size:16px;white-space:nowrap}
+#hud-lv{font-size:13px;color:#a05a00;white-space:nowrap}
+.tb-mid{display:flex;align-items:center;gap:8px;flex:1;min-width:160px}
+.tb-mid .sep{width:2px;height:16px;background:#00000022}
+.hudcoin canvas{vertical-align:middle}
+#hud-coins{font-size:16px;min-width:26px}
+#hud-coins.bumpc{animation:chipin .3s}
+.pbar{flex:1;height:12px;background:#d9cfb8;border:2px solid var(--ink);border-radius:6px;overflow:hidden;max-width:220px}
+.pbar i{display:block;height:100%;background:linear-gradient(#ffe98a,#ffb62e);width:0;transition:width .3s}
+.tb-right{display:flex;align-items:center;gap:8px}
+#hud-time{font-size:15px;font-variant-numeric:tabular-nums}
+.stage{position:relative;height:560px;background:var(--sky);border:4px solid var(--ink);overflow:hidden}
+@media(max-height:740px){.stage{height:470px}}
+.stage.lv2{background:#463019}
+.stage.quake{animation:quake .4s}
+@keyframes quake{0%,100%{transform:translate(0)}20%{transform:translate(-7px,2px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-5px,1px)}80%{transform:translate(4px,-1px)}}
+.hintbar{background:var(--cream);border:4px solid var(--ink);border-top:none;border-radius:0 0 12px 12px;
+ padding:8px 14px;font-size:14px;font-weight:700;color:#6b5b3e}
+/* 暂停时冻结场景内所有 CSS 动画（跳/砖/金币/花/云等） */
+.stage.f-anim *,.stage.f-anim{animation-play-state:paused!important}
+
+/* ===== 场景元素 ===== */
+.ground{position:absolute;left:0;right:0;bottom:0;height:64px;border-top:4px solid var(--ink);
+ background:repeating-linear-gradient(90deg,transparent 0 30px,rgba(0,0,0,.22) 30px 34px),
+ repeating-linear-gradient(0deg,transparent 0 28px,rgba(0,0,0,.22) 28px 32px),#c1703a}
+.ground::before{content:'';position:absolute;left:0;right:0;top:-14px;height:14px;background:linear-gradient(#62c862,#3ea23e)}
+.stage.lv2 .ground{background:repeating-linear-gradient(90deg,transparent 0 30px,rgba(0,0,0,.3) 30px 34px),
+ repeating-linear-gradient(0deg,transparent 0 28px,rgba(0,0,0,.3) 28px 32px),#6e4520}
+.stage.lv2 .ground::before{background:linear-gradient(#5c8a46,#3c6e30)}
+.hill{position:absolute;background:#3ea23e;
+ clip-path:polygon(25% 0,25% 22%,12% 22%,12% 48%,5% 48%,5% 72%,0 72%,0 100%,100% 100%,100% 72%,95% 72%,95% 48%,88% 48%,88% 22%,75% 22%,75% 0)}
+.hill::after{content:'';position:absolute;inset:0;background:rgba(0,0,0,.08)}
+.cloud{position:absolute;width:92px;height:26px;background:#fff;border:3px solid #dfe9ff;border-radius:14px}
+.cloud::before{content:'';position:absolute;left:16px;top:-14px;width:34px;height:20px;background:#fff;border:3px solid #dfe9ff;border-radius:12px}
+.bush{position:absolute;width:64px;height:20px;background:#2f9e44;border:3px solid #1c6b2a;border-radius:12px 12px 4px 4px}
+.beam{position:absolute;top:0;bottom:64px;width:26px;border:3px solid #2e1c0a;z-index:1;
+ background:repeating-linear-gradient(#8a5a2b 0 12px,#6e4520 12px 24px)}
+.lvtag{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.88);border:2px solid var(--ink);
+ border-radius:6px;padding:4px 8px;font-size:12px;font-weight:800;z-index:6}
+
+.sign{position:absolute;left:50%;transform:translateX(-50%);top:14px;background:#e7c989;border:3px solid var(--ink);
+ border-radius:8px;padding:8px 18px;font-weight:800;font-size:18px;box-shadow:0 4px 0 rgba(0,0,0,.25);z-index:5;
+ max-width:80%;text-align:center}
+.sign.big{font-size:22px}
+.sign b{color:#c2570a}
+
+/* 问号砖 */
+.qblock{position:absolute;min-width:56px;height:56px;background:#f7a41d;border:3px solid #6b3a12;cursor:pointer;
+ box-shadow:inset 3px 3px 0 #ffd166,inset -3px -3px 0 #cf7d00;display:flex;align-items:center;justify-content:center;
+ font-weight:900;font-size:24px;color:#6b3a12;z-index:5}
+.qblock .w{font-size:13px;line-height:1.15;color:#4a2a05;text-align:center;word-break:break-word;padding:2px}
+.qblock.letter{width:56px}
+.qblock:hover{filter:brightness(1.06)}
+.qblock.bump{animation:bump .32s}
+@keyframes bump{0%{margin-top:0}40%{margin-top:-16px}100%{margin-top:0}}
+.qblock.shake{animation:shakex .4s}
+@keyframes shakex{0%,100%{transform:translateX(0)}25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-4px)}}
+.qblock.used{background:#a99a7c;border-color:#5c5243;color:#6b6250;box-shadow:inset 3px 3px 0 #c1b69c,inset -3px -3px 0 #8f8468;cursor:default}
+
+/* 马里奥 / 怪物 */
+.mario{position:absolute;left:0;bottom:64px;width:48px;height:56px;z-index:6;pointer-events:none}
+.mario canvas{position:absolute;left:0;top:0}
+.mario.slid{transition:left .45s ease-in-out}
+.mario.slid2{transition:left .16s linear}
+.mario.hop{animation:hop .45s ease-out}
+@keyframes hop{0%{margin-bottom:0}45%{margin-bottom:58px}100%{margin-bottom:0}}
+.mario.sink{transition:transform .45s ease-in,opacity .45s;transform:translateY(-104px);opacity:0;z-index:2}
+.shroom{position:absolute;bottom:92px;width:48px;margin-left:-24px;z-index:6;transition:left .45s ease;transform-origin:bottom}
+.shroom.dead{transform:scale(.9,.25)}
+.coinfly{position:absolute;width:32px;height:32px;z-index:20;pointer-events:none;animation:coinup .75s ease-out both}
+@keyframes coinup{0%{transform:translateY(0) scale(1);opacity:1}70%{opacity:1}100%{transform:translateY(-66px) scale(.65);opacity:0}}
+.pop{position:absolute;font-weight:900;font-size:18px;color:#ffec8a;text-shadow:2px 2px 0 #7a4a00;
+ z-index:20;pointer-events:none;animation:popup .8s ease-out both}
+@keyframes popup{0%{transform:translateY(0)}100%{transform:translateY(-46px);opacity:0}}
+.puff{position:absolute;width:30px;height:30px;background:#fff;border-radius:50%;z-index:8;animation:puffa .5s ease-out both}
+@keyframes puffa{0%{transform:scale(.3);opacity:.95}100%{transform:scale(2);opacity:0}}
+
+.banner{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);background:var(--gold);border:4px solid var(--ink);
+ padding:12px 28px;font-size:24px;font-weight:900;border-radius:12px;z-index:25;box-shadow:0 6px 0 rgba(0,0,0,.3);animation:chipin .3s}
+.toast{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,20,.88);color:#fff;
+ padding:10px 18px;border-radius:10px;font-weight:800;z-index:30;animation:chipin .25s;white-space:nowrap}
+@keyframes chipin{from{transform:translate(var(--tx,0),var(--ty,0)) scale(.5);opacity:.4}to{opacity:1}}
+.banner,.toast{--tx:-50%;--ty:-50%}
+.lvlintro{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;
+ background:rgba(0,0,0,.38);z-index:40;pointer-events:none;animation:chipin .25s}
+.lvlintro b{font-size:36px;color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.6);letter-spacing:4px}
+.lvlintro span{color:#fff;font-weight:800;font-size:16px}
+
+/* 触屏按键 */
+.touchctl{position:absolute;right:10px;bottom:76px;display:flex;gap:8px;z-index:9}
+.touchctl button{width:52px;height:52px;font-size:20px;font-weight:900;border:3px solid var(--ink);
+ background:rgba(255,255,255,.85);border-radius:12px;box-shadow:0 3px 0 var(--ink);cursor:pointer}
+.touchctl button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+
+/* 第1关 双队 */
+.divider{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:4px dashed rgba(255,255,255,.65);z-index:2}
+.teamtag{position:absolute;top:12px;background:#fff;border:3px solid var(--ink);border-radius:8px;padding:6px 12px;
+ font-weight:900;font-size:16px;z-index:7;display:flex;align-items:center;gap:6px}
+.teamtag.red{left:12px;color:#c62828}
+.teamtag.blue{right:12px;color:#2a5fd0}
+.teamtag .sc{background:var(--gold);border:2px solid var(--ink);border-radius:6px;padding:0 8px;color:var(--ink)}
+.teamtag .lock{font-size:12px;color:#c62828}
+
+/* 第2-4关 双队竞速：左右半区 */
+.half{position:absolute;top:0;bottom:0;width:50%;z-index:3}
+.half.hl{left:0}.half.hr{right:0}
+.half.hr{border-left:4px dashed rgba(255,255,255,.65)}
+.pkbar{position:absolute;top:52px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);
+ border:3px solid var(--ink);border-radius:8px;padding:6px 14px;font-weight:900;font-size:15px;
+ z-index:7;white-space:nowrap;text-align:center}
+.pkbar b{color:#c2570a}
+.pk-score{position:absolute;top:12px;z-index:7;background:var(--gold);border:3px solid var(--ink);
+ border-radius:8px;padding:4px 10px;font-weight:900;font-size:15px}
+.pk-score.red{left:12px;color:#c62828}.pk-score.blue{right:12px;color:#2a5fd0}
+.pk-half-tag{position:absolute;top:12px;font-size:13px;font-weight:900;color:#fff;background:rgba(0,0,0,.4);
+ border-radius:6px;padding:2px 8px;z-index:6}
+/* 第2关双队：字母砖与拼写槽缩进半区 */
+.stage.duo .sign{top:10px;font-size:18px;max-width:60%}
+.half .brow{top:120px;gap:7px;padding:0 8px}
+.half .brow .qblock{width:40px;min-width:40px;height:44px}
+.half .brow .qblock .w{font-size:13px}
+.half .slots{top:210px;gap:5px}
+.half .slot{width:26px;height:36px;font-size:20px}
+/* 第3关双队：词块/答案条缩进半区，去掉蘑菇轨道 */
+.half .chips{top:104px;max-width:90%;gap:4px}
+.half .chip{font-size:14px;padding:5px 8px}
+.half .tiles{top:170px;max-width:92%;gap:6px}
+.half .tile{font-size:14px;padding:6px 9px}
+.half .minirow{top:250px;gap:6px}
+.half .pk-hint{position:absolute;top:290px;left:0;right:0;text-align:center;color:#fff;
+ font-weight:800;font-size:13px;text-shadow:1px 1px 2px #000}
+/* 第4关双队：水管与花盆按半区 40% 宽度排布 */
+.half .pipeh{width:62px;top:100px}
+.half .pipeh .plip{height:24px}
+.half .pipeh .plate{font-size:11px;padding:2px 5px;max-width:58px}
+.half .flspot{width:62px;margin-left:-31px;bottom:64px}
+.half .flspot .zh{font-size:11px;padding:3px 5px;max-width:60px;overflow:hidden;text-overflow:ellipsis}
+.half .flspot .pot{width:32px;height:22px}
+
+/* 第2关 */
+.brow{position:absolute;top:108px;left:0;right:0;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:0 12px;z-index:5}
+.brow .qblock{position:relative}
+.slots{position:absolute;top:250px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
+.slot{width:34px;height:46px;border-bottom:4px solid var(--ink);background:rgba(255,255,255,.1);
+ display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#ffe27a}
+.slot.fill{background:rgba(255,217,74,.28);animation:chipin .25s}
+
+/* 第3关 */
+.chips{position:absolute;top:96px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:6px;
+ justify-content:center;min-height:42px;max-width:92%;z-index:5}
+.chip{background:var(--gold);border:3px solid var(--ink);border-radius:8px;padding:6px 12px;font-weight:900;font-size:17px;animation:chipin .18s}
+.chip.punc{margin-left:-12px}
+.tiles{position:absolute;top:168px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:8px;
+ justify-content:center;max-width:92%;z-index:5}
+.tile{background:#fff8e6;border:3px solid var(--ink);border-radius:8px;padding:7px 12px;font-weight:800;
+ font-size:17px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.tile:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
+.tile.off{visibility:hidden}
+.tile.hint{animation:hintp .5s 3;border-color:#e73c2e;background:#ffecec}
+@keyframes hintp{50%{transform:translateY(-5px);background:#ffd9d9}}
+.minirow{position:absolute;top:236px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
+.track{position:absolute;left:150px;right:150px;bottom:66px;height:26px;display:flex;z-index:4}
+.trackcell{flex:1;background:#e7c989;border:2px solid #7a4a12;display:flex;align-items:center;justify-content:center;
+ font-weight:900;color:#7a4a12;font-size:14px}
+.dist{position:absolute;bottom:152px;width:130px;margin-left:-65px;text-align:center;background:#ffe08a;
+ border:2px solid var(--ink);border-radius:6px;padding:3px 4px;font-weight:800;font-size:13px;z-index:7;
+ transition:left .45s ease;white-space:nowrap}
+
+/* 第4关 */
+.pipeh{position:absolute;top:-6px;width:86px;height:134px;z-index:3;cursor:pointer}
+.pipeh .pbody{position:absolute;top:0;bottom:28px;left:8px;right:8px;background:#3ea23e;border:3px solid #14532d}
+.pipeh .plip{position:absolute;bottom:0;left:0;right:0;height:30px;background:#3ea23e;border:3px solid #14532d;border-radius:4px}
+.pipeh .plate{position:absolute;top:46px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid var(--ink);
+ padding:3px 9px;font-weight:900;font-size:14px;border-radius:6px;white-space:nowrap;z-index:4;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.pipeh:hover{filter:brightness(1.08)}
+.pipeh.sel{filter:brightness(1.15)}
+.pipeh.sel .plate{background:var(--gold)}
+.pipeh.done{opacity:.55;cursor:default}
+.flspot{position:absolute;bottom:64px;width:86px;margin-left:-43px;text-align:center;cursor:pointer;z-index:5}
+.flspot .zh{display:inline-block;background:#fff;border:3px solid var(--ink);border-radius:8px;padding:4px 8px;
+ font-weight:800;font-size:14px;margin-bottom:4px}
+.flspot .bud{width:14px;height:18px;background:#2f9e44;margin:0 auto 2px;border-radius:8px 8px 3px 3px}
+.flspot .pot{width:42px;height:26px;margin:0 auto;background:#b55f2e;border:3px solid var(--ink);
+ clip-path:polygon(8% 0,92% 0,76% 100%,24% 100%)}
+.flspot:hover .zh{background:#fff3c9}
+.flspot.done{cursor:default}
+.flspot.done .zh{background:#dfffd6}
+.flspot canvas{margin:0 auto}
+.flspot canvas.bloomanim{animation:bloom .5s ease-out}
+@keyframes bloom{0%{transform:scale(0)}70%{transform:scale(1.3)}100%{transform:scale(1)}}
+
+/* ===== 弹层 ===== */
+.ovl{position:fixed;inset:0;background:rgba(0,0,0,.55);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.ovl.show{display:flex}
+.box{background:var(--cream);border:4px solid var(--ink);border-radius:14px;padding:22px 26px;min-width:300px;
+ max-width:94vw;box-shadow:0 10px 0 rgba(0,0,0,.35);text-align:center}
+.box.wide{width:min(680px,94vw);text-align:left;max-height:92vh;overflow:auto}
+.box h2{font-size:24px;margin-bottom:6px}
+.muted{color:#666;font-size:14px;margin-top:6px;line-height:1.6}
+.rbtns{display:flex;gap:10px;justify-content:center;margin-top:16px;flex-wrap:wrap}
+.rstats{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:14px 0 2px}
+.rstat{background:#fff;border:2px solid var(--ink);border-radius:8px;padding:8px 10px;font-weight:800;font-size:16px}
+.rstat b{display:block;font-size:12px;color:#888}
+#bank-text{width:100%;height:220px;border:3px solid var(--ink);border-radius:8px;padding:10px;
+ font:13px/1.6 Consolas,"Courier New",monospace;margin-top:12px;user-select:text;-webkit-user-select:text}
+.bankmsg{margin-top:8px;font-weight:800;color:#2e7d32;min-height:20px}
+.bankmsg.err{color:#c62828}
+/* 标题页取词范围 */
+.scope-box{background:rgba(255,255,255,.94);border:3px solid var(--ink);border-radius:12px;
+ padding:8px 10px;margin-top:10px;color:var(--ink);text-align:left}
+.scope-line{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin:3px 0;font-size:13px;font-weight:800}
+.scope-line>b{min-width:52px;color:#c2570a}
+#scope-books.chips,#scope-units.chips{position:static;transform:none;left:auto;top:auto;display:flex;flex-wrap:wrap;gap:5px}
+.chip{border:2px solid var(--ink);border-radius:999px;background:#fff;color:var(--ink);
+ font-size:12px;font-weight:800;padding:3px 10px;cursor:pointer;user-select:none}
+.chip.on{background:var(--ink);color:#fff}
+.chip:hover{transform:translateY(-1px)}
+.scope-actions{margin-top:6px}
+.scope-status{font-size:12px;font-weight:800;color:#2e7d32;margin-left:auto}
+@media(max-width:640px){.scope-status{margin-left:0;width:100%}}
+#bank-file{display:none}
+.helplist{text-align:left;font-size:14px;line-height:1.9;margin-top:8px}
+.helplist b{color:#c2570a}
+/* 隐藏的中文提示 */
+.zhhidden{display:inline-block;background:#c2570a;color:#fff;border-radius:6px;padding:0 10px;
+ letter-spacing:3px;font-weight:900;opacity:.85}
+.zhhint{cursor:pointer}
+.zhreplay{display:inline-block;margin-left:4px;font-size:14px;vertical-align:middle;animation:zhpulse 1.4s ease-in-out infinite}
+@keyframes zhpulse{0%,100%{opacity:.5;transform:scale(1)}50%{opacity:1;transform:scale(1.18)}}
+/* 游戏记录 */
+.logsum{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px;margin:12px 0}
+.logsum .cell{background:#fff;border:2px solid var(--ink);border-radius:8px;padding:8px 6px;text-align:center;font-weight:900;font-size:18px}
+.logsum .cell b{display:block;font-size:12px;color:#888;font-weight:800}
+.loglist{max-height:44vh;overflow:auto;border-top:2px dashed #c9bda4;margin-top:6px;padding-top:6px}
+.logrow{display:flex;flex-wrap:wrap;gap:6px 12px;align-items:center;background:#fff;border:2px solid #e0d7c4;
+ border-radius:8px;padding:7px 10px;margin:6px 0;font-size:13px;font-weight:700;line-height:1.5}
+.logrow .lt{color:#888;font-variant-numeric:tabular-nums}
+.logrow .lwin-red{color:#c62828;font-weight:900}.logrow .lwin-blue{color:#2a5fd0;font-weight:900}
+.logrow .lfail{color:#888;font-weight:900}
+.logempty{color:#999;text-align:center;padding:26px 0;font-weight:700}
+</style>
+</head>
+<body>
+
+<!-- 标题页 -->
+<section id="scr-title" class="screen active">
+  <div class="titlewrap">
+    <div class="logo">单词大冒险</div>
+    <div class="logo-sub">把单词复习变成马里奥闯关 · 英语课堂小游戏 · 离线可用</div>
+    <div id="title-scene"></div>
+    <div class="modebtns">
+      <button class="btn big red" id="btn-class">🏫 课堂版<small>左右两队 PK · 大屏教学 · 点击抢答</small></button>
+      <button class="btn big green" id="btn-solo">🎮 学生版<small>键盘 A/D 移动 · W/空格 起跳 · 自主闯关</small></button>
+    </div>
+    <div class="titlerow">
+      <button class="btn small" id="btn-bank">📖 词库设置</button>
+      <button class="btn small" id="btn-help">❓ 玩法说明</button>
+      <button class="btn small" id="btn-log">📊 游戏记录</button>
+      <button class="btn small" id="btn-hidezh-title">🙈 中文提示：隐藏</button>
+      <button class="btn small" id="btn-readmode-title">🔤 念题：英文</button>
+      <button class="btn small" id="btn-sound-title">🔊 读音：开</button>
+    </div>
+    <div class="scope-box">
+      <div class="scope-line"><b>📚 册别</b><span id="scope-books" class="chips"></span></div>
+      <div class="scope-line"><b>🔢 单元</b><span id="scope-units" class="chips"></span></div>
+      <div class="scope-line scope-actions">
+        <button class="btn small" id="scope-all">全选</button>
+        <button class="btn small gray" id="scope-none">清空</button>
+        <button class="btn small" id="scope-custom">✏️ 自定义词语范围</button>
+        <span id="scope-status" class="scope-status"></span>
+      </div>
+    </div>
+    <div class="bankline" id="bank-status"></div>
+  </div>
+</section>
+
+<!-- 选关页 -->
+<section id="scr-select" class="screen">
+  <div class="panel selpanel">
+    <div class="selhead">
+      <button class="btn small gray" id="btn-backtitle">← 返回</button>
+      <h2>选择关卡</h2>
+      <span class="modepill" id="mode-pill"></span>
+    </div>
+    <div class="lvgrid">
+      <button class="lvcard" data-lv="1"><span class="lvic">🍄</span><b>第1关 · 蘑菇原野</b><span class="lvdesc">问号砖选词：默认藏中文听英文，顶出 / 抢点正确的英文单词</span></button>
+      <button class="lvcard" data-lv="2"><span class="lvic">🪙</span><b>第2关 · 金币矿洞</b><span class="lvdesc">顶砖拼写：按顺序点字母块拼单词；课堂版两队竞速，先得 5 分获胜</span></button>
+      <button class="lvcard" data-lv="3"><span class="lvic">🌸</span><b>第3关 · 连词踩蘑菇</b><span class="lvdesc">造句排序：拼成完整句子；课堂版两队竞速，先得 3 分获胜</span></button>
+      <button class="lvcard" data-lv="4"><span class="lvic">🚿</span><b>第4关 · 水管花园</b><span class="lvdesc">中英配对：先英文后中文；课堂版两队竞速，先赢 2 轮获胜</span></button>
+    </div>
+    <div class="selbank" id="sel-bank"></div>
+  </div>
+</section>
+
+<!-- 游戏页 -->
+<section id="scr-game" class="screen">
+  <div class="gamewin">
+    <div class="topbar">
+      <div class="tb-left"><span class="tb-title">🍄 单词大冒险</span><span id="hud-lv"></span></div>
+      <div class="tb-mid">
+        <span class="hudcoin" id="hud-coin-ic"></span><span id="hud-coins">0</span>
+        <span class="sep"></span><span id="hud-prog">0/0</span>
+        <div class="pbar"><i id="hud-fill"></i></div>
+      </div>
+      <div class="tb-right">
+        <span id="hud-time">00:00</span>
+        <button class="btn mini" id="btn-hidezh">🙈</button>
+        <button class="btn mini" id="btn-readmode" title="念题语言：英文/中文/静音">🔤英</button>
+        <button class="btn mini" id="btn-sound">🔊</button>
+        <button class="btn mini" id="btn-pause">暂停</button>
+        <button class="btn mini" id="btn-restart">重来</button>
+        <button class="btn mini gray" id="btn-exit">选关</button>
+      </div>
+    </div>
+    <div id="stage" class="stage"></div>
+    <div class="hintbar" id="hintbar"></div>
+  </div>
+</section>
+
+<!-- 暂停 -->
+<div class="ovl" id="ovl-pause"><div class="box">
+  <h2>⏸ 暂停中</h2><p class="muted">休息一下，马上回来～</p>
+  <div class="rbtns">
+    <button class="btn primary" id="p-resume">▶ 继续</button>
+    <button class="btn" id="p-restart">↻ 重玩本关</button>
+    <button class="btn gray" id="p-exit">🏠 返回选关</button>
+  </div>
+</div></div>
+
+<!-- 结算 -->
+<div class="ovl" id="ovl-result"><div class="box" id="result-box"></div></div>
+
+<!-- 词库 -->
+<div class="ovl" id="modal-bank"><div class="box wide">
+  <h2>📖 词库设置</h2>
+  <p class="muted">每行一个单词：<b>英文 中文</b>（空格 / 逗号 / Tab 分隔均可，# 开头的行会被忽略）。<br>
+  例：<code>pencil box 铅笔盒</code>、<code>red,红色</code>。至少需要 8 个单词。保存后自动记住（浏览器本地）。</p>
+  <textarea id="bank-text" spellcheck="false" placeholder="apple 苹果&#10;school 学校&#10;red 红色"></textarea>
+  <div id="bank-msg" class="bankmsg"></div>
+  <div class="rbtns">
+    <button class="btn primary" id="bank-apply">✔ 使用这份词表</button>
+    <button class="btn" id="bank-default">↺ 恢复默认（2026新版全册）</button>
+    <button class="btn" id="bank-download">⬇ 下载模板</button>
+    <button class="btn" id="bank-upload-btn">⬆ 上传词表文件</button>
+    <input type="file" id="bank-file" accept=".txt,.csv,text/plain">
+    <button class="btn gray" id="bank-close">关闭</button>
+  </div>
+</div></div>
+
+<!-- 自定义词语范围 -->
+<div class="ovl" id="modal-scope-custom"><div class="box wide">
+  <h2>✏️ 自定义词语范围</h2>
+  <p class="muted">每行写一个英文单词，游戏只从这些词里出题。可以只写英文，也可以写成 <code>pencil box 铅笔盒</code>。<br>留空后点“使用”＝取消自定义，回到册别/单元筛选。<b>注意：这里只挑范围，不新增词；要加新词请用“📖 词库设置”。</b></p>
+  <textarea id="scope-words" spellcheck="false" placeholder="hello&#10;school&#10;pencil box"></textarea>
+  <div id="scope-words-msg" class="bankmsg"></div>
+  <div class="rbtns">
+    <button class="btn primary" id="scope-words-apply">✔ 使用这些词</button>
+    <button class="btn gray" id="scope-words-close">关闭</button>
+  </div>
+</div></div>
+
+<!-- 帮助 -->
+<div class="ovl" id="modal-help"><div class="box wide">
+  <h2>❓ 玩法说明</h2>
+  <div class="helplist">
+    <b>🍄 第1关 蘑菇原野 · 问号砖选词</b><br>
+    · 学生版：A/D（或←→）左右移动，W / 空格 / ↑ 起跳，跳到正确词块下方用头去顶，顶错不给金币。<br>
+    · 课堂版：红蓝两队各占屏幕一半，看中文意思抢点自己区域的正确单词，马里奥会自动冲过去顶砖；点错冷却 2 秒，先拿 5 金币的队伍获胜。
+    <br><br><b>🪙 第2关 金币矿洞 · 顶砖拼写</b><br>
+    · 学生版：看中文意思，按顺序点选带字母的问号砖拼出单词；点对顶出金币，点错砖块不动。<br>
+    · 课堂版：左右两队同时拼同一个词，谁先拼对得 1 分，先拿 5 分获胜！
+    <br><br><b>🌸 第3关 连词踩蘑菇 · 造句排序</b><br>
+    · 学生版：把打乱的词块点成一句完整的话（标点也要放进去）。排错一次，蘑菇就向你逼近一格；被追上就要重来，成功则马里奥冲过去踩扁它！<br>
+    · 课堂版：左右两队同时排同一句话，谁先排对得 1 分；排错清空重来，先拿 3 分获胜（课堂版无蘑菇）。
+    <br><br><b>🚿 第4关 水管花园 · 中英配对</b><br>
+    · 学生版：先点一个水管上的英文单词，再点对应中文的花盆；配对成功马里奥钻进水管"噗"地带出一朵花。<br>
+    · 课堂版：左右两队配同一组词，谁先配完 4 对赢一轮，先赢 2 轮获胜！
+    <br><br><b>🙈 藏中文 · 🔤 念题语言</b><br>打开游戏默认藏中文，题干变成橙色“？？？”；想看中文点 🙈 猴子按钮。旁边的念题按钮点一下换一种：<b>🔤英文 → 🀄中文 → 🔇不出声</b>，循环切换（默认英文）。藏中文时每题会按当前设置念一遍：英文念答案单词，中文念题干意思；点“？？？🔊”可重听。念题跟 🔊 点词读音是两个独立开关。第4关花盆中文是配对答案，不隐藏。课堂版和学生版都生效。
+    <br><br><b>🔊 读音</b><br>选英文词块、拼对单词、点水管时会朗读出来（用系统自带的英语语音，离线可用）。标题页或顶栏可以开关；如果电脑没装英语语音包就没有声音，不影响闯关。
+    <br><br><b>📊 游戏记录</b><br>每局结束自动保存。标题页点“游戏记录”可以看今日累计（局数、获胜次数、金币、失误、用时）和每局明细，也能一键清零今日记录；结算弹窗里也能直接查看。
+    <br><br><b>📚 新版词库 · 取词范围</b><br>内置 <b>2026 新版冀教版三年级起点、三到六年级上下册共 8 册约 629 词</b>（河北教育出版社，按单元整理）。标题页直接点「册别」和「单元」小圆片挑范围，可多选；「全选/清空」一键切换；「✏️ 自定义词语范围」可只填若干英文词，游戏就只从这些词出题（范围留空即取消）。设置自动记住。<br>要换成自己的词表，点「📖 词库设置」粘贴/上传，下载模板也行；范围筛选对自定义词表同样生效（没有册别标记的词会一直保留）。
+    <br><br><b>💾 离线使用</b><br>本页面是单个 HTML 文件，无任何联网资源：保存到桌面或 U 盘，在班级电脑上双击用浏览器打开即可。
+  </div>
+  <div class="rbtns"><button class="btn primary" id="help-close">知道了</button></div>
+</div></div>
+
+<!-- 游戏记录 -->
+<div class="ovl" id="modal-log"><div class="box wide">
+  <h2>📊 游戏记录</h2>
+  <div id="log-sum"></div>
+  <div id="log-list" class="loglist"></div>
+  <div class="rbtns">
+    <button class="btn red" id="log-clear">🗑 清零今日记录</button>
+    <button class="btn primary" id="log-close">关闭</button>
+  </div>
+</div></div>
+
+<script>
+'use strict';
+/* ============ 基础工具 ============ */
+const $=s=>document.querySelector(s);
+const el=(t,c,h)=>{const e=document.createElement(t);if(c)e.className=c;if(h!=null)e.innerHTML=h;return e;};
+const rnd=a=>a[Math.floor(Math.random()*a.length)];
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]];}return a;};
+const pad2=n=>String(n).padStart(2,'0');
+const fmt=ms=>{const s=Math.floor(ms/1000);return pad2(Math.floor(s/60))+':'+pad2(s%60);};
+
+/* ============ 像素画 ============ */
+function sprite(rows,pal,sc){const c=document.createElement('canvas');const w=rows[0].length,h=rows.length;
+ c.width=w*sc;c.height=h*sc;const g=c.getContext('2d');
+ for(let y=0;y<h;y++)for(let x=0;x<w;x++){const col=pal[rows[y][x]];if(col){g.fillStyle=col;g.fillRect(x*sc,y*sc,sc,sc);}}
+ return c;}
+const MPAL={r:'#e73c2e',s:'#f8b878',h:'#6b3a12',b:'#2a5fd0',y:'#ffd94a',k:'#20242b'};
+const M_HEAD=[
+"..rrrrrr....",".rrrrrrrrr..",".hhhsssss...","hhsssksss...",".hssssshhh..","..ssssss....",
+".rrrbbrr....","rrrrbbbbrrr.","ssrbybbybrss","ssbbbbbbbbss"];
+const MARIO={
+ stand:M_HEAD.concat(["..bbbbbbbb..","..bbb..bbb..",".hhh....hhh.","hhhh....hhhh"]),
+ walk :M_HEAD.concat(["..bbbbbbbb..","..bbbbbb....",".hhh..hhh...","hhhh..hhhh.."]),
+ jump :M_HEAD.concat(["s.bbbbbbbb.s",".bbbbbbbbbb.",".hhh....hhh.","............"])};
+const SPAL={p:'#a05cd6',w:'#ffffff',e:'#ffe9c2',k:'#20242b'};
+const SHROOM=[
+"...pppppp...","..pppppppp..",".ppwwppwwpp.","pppwwppwwppp","pppppppppppp",".pppppppppp.",
+".eeeeeeeeee.","..ekeeeeke..",".eeeeeeeeee.","..eeeeeeee..","...eeeeee..."];
+const CPAL={o:'#c98a00',y:'#ffd94a',O:'#f2b71e'};
+const COIN=["..oooo..",".oyyyyo.","oyyyOyyo","oyyyOyyo","oyyyOyyo","oyyyOyyo",".oyyyyo.","..oooo.."];
+const FPAL={o:'#ff8a1e',y:'#ffd94a',O:'#e88a00',g:'#2f9e44',l:'#5cc45c'};
+const FLOWER=[
+"....oooo....","..oooooooo..",".oooyyyyooo.",".ooyyyOyyoo.",".ooyyyOyyoo.",".oooyyyyooo.",
+"..oooooooo..","....oooo....",".....gg.....",".ll..gg..ll.","..ll.gg.ll..","...llggll..."];
+
+/* ============ 音效（WebAudio 合成） ============ */
+let actx=null;
+function ac(){try{if(!actx)actx=new (window.AudioContext||window.webkitAudioContext)();
+ if(actx.state==='suspended')actx.resume();}catch(e){}return actx;}
+function tone(f,d,type,v,delay,slide){const a=ac();if(!a)return;const t=a.currentTime+(delay||0);
+ const o=a.createOscillator(),g=a.createGain();o.type=type||'square';
+ o.frequency.setValueAtTime(f,t);if(slide)o.frequency.exponentialRampToValueAtTime(slide,t+d);
+ g.gain.setValueAtTime(v||.14,t);g.gain.exponentialRampToValueAtTime(.001,t+d);
+ o.connect(g).connect(a.destination);o.start(t);o.stop(t+d+.03);}
+const sCoin=()=>{tone(988,.09,'square',.12);tone(1319,.2,'square',.12,.09);};
+const sJump=()=>tone(260,.2,'square',.12,0,720);
+const sBump=()=>tone(140,.08,'square',.2);
+const sWrong=()=>{tone(220,.12,'sawtooth',.1);tone(150,.2,'sawtooth',.1,.12);};
+const sPop=()=>tone(500,.08,'square',.1,0,900);
+const sStomp=()=>tone(220,.1,'square',.2,0,70);
+const sPipe=()=>tone(620,.28,'sine',.16,0,110);
+const sWin=()=>[523,659,784,1047].forEach((f,i)=>tone(f,.14,'square',.12,i*.1));
+document.addEventListener('pointerdown',()=>ac(),{once:true});
+
+/* ============ 词库 ============ */
+const DEFAULT_BANK={name:"冀教版三起·2026新版（3-6年级全册）",items:[
+{en:"hi",zh:"嗨；你好",b:"3上",u:1},
+{en:"I",zh:"我",b:"3上",u:1},
+{en:"hello",zh:"喂；你好",b:"3上",u:1},
+{en:"name",zh:"名字",b:"3上",u:1},
+{en:"fine",zh:"健康的",b:"3上",u:1},
+{en:"goodbye",zh:"再见",b:"3上",u:1},
+{en:"bye",zh:"再见",b:"3上",u:1},
+{en:"morning",zh:"早上",b:"3上",u:1},
+{en:"thank",zh:"谢谢，感谢(某人)",b:"3上",u:1},
+{en:"nice",zh:"令人愉快的",b:"3上",u:1},
+{en:"meet",zh:"遇见",b:"3上",u:1},
+{en:"school",zh:"学校",b:"3上",u:2},
+{en:"playground",zh:"操场",b:"3上",u:2},
+{en:"library",zh:"图书馆",b:"3上",u:2},
+{en:"classroom",zh:"教室",b:"3上",u:2},
+{en:"tidy",zh:"整洁的；整理",b:"3上",u:2},
+{en:"letter",zh:"字母",b:"3上",u:2},
+{en:"yes",zh:"是的",b:"3上",u:2},
+{en:"colour",zh:"颜色",b:"3上",u:3},
+{en:"red",zh:"红色；红色的",b:"3上",u:3},
+{en:"yellow",zh:"黄色；黄色的",b:"3上",u:3},
+{en:"blue",zh:"蓝色；蓝色的",b:"3上",u:3},
+{en:"orange",zh:"橙色；橙色的",b:"3上",u:3},
+{en:"green",zh:"绿色；绿色的",b:"3上",u:3},
+{en:"friend",zh:"朋友",b:"3上",u:4},
+{en:"her",zh:"她的",b:"3上",u:4},
+{en:"his",zh:"他的",b:"3上",u:4},
+{en:"one",zh:"一",b:"3上",u:4},
+{en:"pencil box",zh:"铅笔盒",b:"3上",u:4},
+{en:"two",zh:"二",b:"3上",u:4},
+{en:"pen",zh:"钢笔",b:"3上",u:4},
+{en:"three",zh:"三",b:"3上",u:4},
+{en:"ruler",zh:"直尺",b:"3上",u:4},
+{en:"four",zh:"四",b:"3上",u:4},
+{en:"pencil",zh:"铅笔",b:"3上",u:4},
+{en:"five",zh:"五",b:"3上",u:4},
+{en:"book",zh:"书",b:"3上",u:4},
+{en:"black",zh:"黑色；黑色的",b:"3上",u:4},
+{en:"in",zh:"在……内",b:"3上",u:4},
+{en:"under",zh:"在……下面",b:"3上",u:4},
+{en:"on",zh:"在……上",b:"3上",u:4},
+{en:"chair",zh:"椅子",b:"3上",u:4},
+{en:"she",zh:"她",b:"3上",u:4},
+{en:"he",zh:"他",b:"3上",u:4},
+{en:"we",zh:"我们",b:"3上",u:4},
+{en:"six",zh:"六",b:"3上",u:5},
+{en:"seven",zh:"七",b:"3上",u:5},
+{en:"eight",zh:"八",b:"3上",u:5},
+{en:"nine",zh:"九",b:"3上",u:5},
+{en:"ten",zh:"十",b:"3上",u:5},
+{en:"head",zh:"头；头部",b:"3上",u:5},
+{en:"body",zh:"身体",b:"3上",u:5},
+{en:"leg",zh:"腿",b:"3上",u:5},
+{en:"foot",zh:"脚",b:"3上",u:5},
+{en:"arm",zh:"手臂",b:"3上",u:5},
+{en:"hand",zh:"手",b:"3上",u:5},
+{en:"face",zh:"脸",b:"3上",u:5},
+{en:"eye",zh:"眼睛",b:"3上",u:5},
+{en:"nose",zh:"鼻子",b:"3上",u:5},
+{en:"have",zh:"有",b:"3上",u:5},
+{en:"ear",zh:"耳朵",b:"3上",u:5},
+{en:"mouth",zh:"嘴；口",b:"3上",u:5},
+{en:"hair",zh:"头发",b:"3上",u:5},
+{en:"OK",zh:"好；行",b:"3上",u:5},
+{en:"big",zh:"大的",b:"3上",u:5},
+{en:"tail",zh:"尾巴",b:"3上",u:5},
+{en:"short",zh:"短的；个子矮的",b:"3上",u:5},
+{en:"small",zh:"小的",b:"3上",u:5},
+{en:"long",zh:"长的",b:"3上",u:5},
+{en:"family",zh:"家庭",b:"3上",u:6},
+{en:"father",zh:"父亲",b:"3上",u:6},
+{en:"teacher",zh:"老师",b:"3上",u:6},
+{en:"mother",zh:"母亲",b:"3上",u:6},
+{en:"doctor",zh:"医生",b:"3上",u:6},
+{en:"sister",zh:"姐姐；妹妹",b:"3上",u:6},
+{en:"happy",zh:"快乐的；幸福的",b:"3上",u:6},
+{en:"student",zh:"学生",b:"3上",u:6},
+{en:"brother",zh:"哥哥；弟弟",b:"3上",u:6},
+{en:"bus driver",zh:"公共汽车司机",b:"3上",u:6},
+{en:"worker",zh:"工人",b:"3上",u:6},
+{en:"love",zh:"爱",b:"3上",u:6},
+{en:"cook",zh:"烹饪；厨师",b:"3上",u:6},
+{en:"work",zh:"劳动；工作",b:"3上",u:6},
+{en:"play",zh:"玩",b:"3上",u:6},
+{en:"look",zh:"看",b:"3上",u:6},
+{en:"tall",zh:"高的",b:"3上",u:6},
+{en:"farmer",zh:"农民；农人",b:"3上",u:6},
+{en:"like",zh:"喜欢",b:"3下",u:1},
+{en:"apple",zh:"苹果",b:"3下",u:1},
+{en:"orange",zh:"橙子",b:"3下",u:1},
+{en:"rice",zh:"米饭",b:"3下",u:1},
+{en:"you",zh:"你；你们",b:"3下",u:1},
+{en:"vegetable",zh:"蔬菜",b:"3下",u:1},
+{en:"meat",zh:"肉",b:"3下",u:1},
+{en:"food",zh:"食物",b:"3下",u:1},
+{en:"fruit",zh:"水果",b:"3下",u:1},
+{en:"banana",zh:"香蕉",b:"3下",u:1},
+{en:"grape",zh:"葡萄",b:"3下",u:1},
+{en:"eleven",zh:"十一",b:"3下",u:1},
+{en:"twelve",zh:"十二",b:"3下",u:1},
+{en:"bread",zh:"面包",b:"3下",u:1},
+{en:"my",zh:"我的",b:"3下",u:1},
+{en:"favourite",zh:"特别喜爱的；特别喜爱的事物",b:"3下",u:1},
+{en:"chicken",zh:"鸡肉",b:"3下",u:1},
+{en:"fish",zh:"鱼肉；鱼",b:"3下",u:1},
+{en:"breakfast",zh:"早餐",b:"3下",u:2},
+{en:"egg",zh:"鸡蛋",b:"3下",u:2},
+{en:"juice",zh:"果汁",b:"3下",u:2},
+{en:"milk",zh:"牛奶",b:"3下",u:2},
+{en:"lunch",zh:"午餐",b:"3下",u:2},
+{en:"hungry",zh:"饥饿的",b:"3下",u:2},
+{en:"noodle",zh:"面条",b:"3下",u:2},
+{en:"water",zh:"水",b:"3下",u:2},
+{en:"eat",zh:"吃",b:"3下",u:2},
+{en:"drink",zh:"喝",b:"3下",u:2},
+{en:"soup",zh:"汤",b:"3下",u:2},
+{en:"dinner",zh:"正餐；晚餐",b:"3下",u:2},
+{en:"good",zh:"好的",b:"3下",u:2},
+{en:"morning",zh:"早晨；上午",b:"3下",u:3},
+{en:"get up",zh:"起床",b:"3下",u:3},
+{en:"make my bed",zh:"整理床铺",b:"3下",u:3},
+{en:"wash",zh:"洗",b:"3下",u:3},
+{en:"evening",zh:"晚上；傍晚",b:"3下",u:3},
+{en:"do",zh:"做；干",b:"3下",u:3},
+{en:"schoolbag",zh:"书包",b:"3下",u:3},
+{en:"put",zh:"放；置",b:"3下",u:3},
+{en:"clean",zh:"干净的；打扫",b:"3下",u:3},
+{en:"tidy",zh:"整洁的；整理",b:"3下",u:3},
+{en:"room",zh:"房间",b:"3下",u:3},
+{en:"sock",zh:"短袜",b:"3下",u:3},
+{en:"farm",zh:"农场",b:"3下",u:4},
+{en:"river",zh:"河；江",b:"3下",u:4},
+{en:"see",zh:"看见",b:"3下",u:4},
+{en:"horse",zh:"马",b:"3下",u:4},
+{en:"cow",zh:"奶牛",b:"3下",u:4},
+{en:"pig",zh:"猪",b:"3下",u:4},
+{en:"rabbit",zh:"兔",b:"3下",u:4},
+{en:"sheep",zh:"绵羊；羊（复数sheep）",b:"3下",u:4},
+{en:"duck",zh:"鸭",b:"3下",u:4},
+{en:"bird",zh:"鸟",b:"3下",u:4},
+{en:"tree",zh:"树；树木",b:"3下",u:4},
+{en:"thirteen",zh:"十三",b:"3下",u:4},
+{en:"fourteen",zh:"十四",b:"3下",u:4},
+{en:"fifteen",zh:"十五",b:"3下",u:4},
+{en:"sixteen",zh:"十六",b:"3下",u:4},
+{en:"seventeen",zh:"十七",b:"3下",u:4},
+{en:"eighteen",zh:"十八",b:"3下",u:4},
+{en:"nineteen",zh:"十九",b:"3下",u:4},
+{en:"twenty",zh:"二十",b:"3下",u:4},
+{en:"animal",zh:"动物",b:"3下",u:4},
+{en:"many",zh:"许多",b:"3下",u:4},
+{en:"zoo",zh:"动物园",b:"3下",u:5},
+{en:"panda",zh:"熊猫",b:"3下",u:5},
+{en:"it",zh:"它",b:"3下",u:5},
+{en:"white",zh:"白色（的）",b:"3下",u:5},
+{en:"elephant",zh:"象",b:"3下",u:5},
+{en:"tiger",zh:"老虎",b:"3下",u:5},
+{en:"bear",zh:"熊",b:"3下",u:5},
+{en:"monkey",zh:"猴子",b:"3下",u:5},
+{en:"plant",zh:"植物",b:"3下",u:5},
+{en:"cute",zh:"可爱的",b:"3下",u:5},
+{en:"its",zh:"它的",b:"3下",u:5},
+{en:"can",zh:"能；会",b:"3下",u:5},
+{en:"swim",zh:"游泳",b:"3下",u:5},
+{en:"day",zh:"天",b:"3下",u:6},
+{en:"week",zh:"周；星期",b:"3下",u:6},
+{en:"Monday",zh:"星期一",b:"3下",u:6},
+{en:"Tuesday",zh:"星期二",b:"3下",u:6},
+{en:"Wednesday",zh:"星期三",b:"3下",u:6},
+{en:"Thursday",zh:"星期四",b:"3下",u:6},
+{en:"Friday",zh:"星期五",b:"3下",u:6},
+{en:"Saturday",zh:"星期六",b:"3下",u:6},
+{en:"Sunday",zh:"星期日",b:"3下",u:6},
+{en:"time",zh:"时间",b:"3下",u:6},
+{en:"thirty",zh:"三十",b:"3下",u:6},
+{en:"forty",zh:"四十",b:"3下",u:6},
+{en:"ball",zh:"球",b:"3下",u:6},
+{en:"dog",zh:"狗",b:"3下",u:6},
+{en:"at",zh:"在",b:"3下",u:6},
+{en:"early",zh:"提早的",b:"3下",u:6},
+{en:"playground",zh:"操场",b:"4上",u:1},
+{en:"classroom",zh:"教室",b:"4上",u:1},
+{en:"music",zh:"音乐",b:"4上",u:1},
+{en:"art",zh:"美术",b:"4上",u:1},
+{en:"library",zh:"图书馆",b:"4上",u:1},
+{en:"next to",zh:"紧邻",b:"4上",u:1},
+{en:"computer",zh:"电脑",b:"4上",u:1},
+{en:"subject",zh:"学科",b:"4上",u:1},
+{en:"class",zh:"课；班",b:"4上",u:1},
+{en:"Chinese",zh:"汉语；中文",b:"4上",u:1},
+{en:"maths",zh:"数学",b:"4上",u:1},
+{en:"PE",zh:"体育",b:"4上",u:1},
+{en:"English",zh:"英语",b:"4上",u:1},
+{en:"science",zh:"科学",b:"4上",u:1},
+{en:"interesting",zh:"有趣的",b:"4上",u:1},
+{en:"has",zh:"有",b:"4上",u:1},
+{en:"with",zh:"和",b:"4上",u:1},
+{en:"today",zh:"今天",b:"4上",u:1},
+{en:"what",zh:"什么",b:"4上",u:1},
+{en:"your",zh:"你的",b:"4上",u:1},
+{en:"afternoon",zh:"下午",b:"4上",u:1},
+{en:"run",zh:"跑",b:"4上",u:2},
+{en:"walk",zh:"走",b:"4上",u:2},
+{en:"there",zh:"在那里",b:"4上",u:2},
+{en:"please",zh:"请",b:"4上",u:2},
+{en:"keep",zh:"保持",b:"4上",u:2},
+{en:"grass",zh:"草",b:"4上",u:2},
+{en:"quiet",zh:"安静的",b:"4上",u:2},
+{en:"no",zh:"禁止",b:"4上",u:2},
+{en:"write",zh:"写",b:"4上",u:2},
+{en:"stand",zh:"站立",b:"4上",u:2},
+{en:"help",zh:"帮助",b:"4上",u:2},
+{en:"go",zh:"走；去",b:"4上",u:2},
+{en:"talk",zh:"谈话；说话",b:"4上",u:2},
+{en:"not",zh:"不，没有",b:"4上",u:2},
+{en:"read",zh:"读",b:"4上",u:2},
+{en:"us",zh:"我们（we 的宾格）",b:"4上",u:2},
+{en:"jump",zh:"跳",b:"4上",u:2},
+{en:"wait",zh:"等待",b:"4上",u:2},
+{en:"sport",zh:"运动",b:"4上",u:3},
+{en:"basketball",zh:"篮球",b:"4上",u:3},
+{en:"football",zh:"足球",b:"4上",u:3},
+{en:"ping-pong",zh:"乒乓球",b:"4上",u:3},
+{en:"they",zh:"他们；她们；它们",b:"4上",u:3},
+{en:"first",zh:"第一",b:"4上",u:3},
+{en:"second",zh:"第二",b:"4上",u:3},
+{en:"very",zh:"非常",b:"4上",u:3},
+{en:"now",zh:"现在",b:"4上",u:3},
+{en:"who",zh:"谁",b:"4上",u:4},
+{en:"work",zh:"工作",b:"4上",u:4},
+{en:"hospital",zh:"医院",b:"4上",u:4},
+{en:"nurse",zh:"护士",b:"4上",u:4},
+{en:"cook",zh:"厨师",b:"4上",u:4},
+{en:"job",zh:"工作；事情",b:"4上",u:4},
+{en:"kind",zh:"种类；友好的",b:"4上",u:4},
+{en:"teacher",zh:"教师",b:"4上",u:4},
+{en:"learn",zh:"学习",b:"4上",u:4},
+{en:"worker",zh:"工人",b:"4上",u:4},
+{en:"farmer",zh:"农民",b:"4上",u:4},
+{en:"doctor",zh:"医生",b:"4上",u:4},
+{en:"police",zh:"警察",b:"4上",u:4},
+{en:"fire",zh:"火",b:"4上",u:4},
+{en:"call",zh:"打电话",b:"4上",u:4},
+{en:"here",zh:"在这里",b:"4上",u:4},
+{en:"look for",zh:"寻找",b:"4上",u:4},
+{en:"because",zh:"因为",b:"4上",u:4},
+{en:"photo",zh:"照片",b:"4上",u:5},
+{en:"how",zh:"多少；怎样",b:"4上",u:5},
+{en:"grandfather",zh:"（外）祖父",b:"4上",u:5},
+{en:"grandmother",zh:"（外）祖母",b:"4上",u:5},
+{en:"aunt",zh:"婶母；舅母；伯母；姑母；姨母",b:"4上",u:5},
+{en:"uncle",zh:"叔父；舅父；伯父；姑父；姨父",b:"4上",u:5},
+{en:"baby",zh:"婴儿",b:"4上",u:5},
+{en:"cousin",zh:"同辈表亲（或堂亲）",b:"4上",u:5},
+{en:"birthday",zh:"生日",b:"4上",u:5},
+{en:"whose",zh:"（用于问句）谁的",b:"4上",u:5},
+{en:"candle",zh:"蜡烛",b:"4上",u:5},
+{en:"thirty",zh:"三十",b:"4上",u:5},
+{en:"forty",zh:"四十",b:"4上",u:5},
+{en:"fifty",zh:"五十",b:"4上",u:5},
+{en:"sixty",zh:"六十",b:"4上",u:5},
+{en:"seventy",zh:"七十",b:"4上",u:5},
+{en:"eighty",zh:"八十",b:"4上",u:5},
+{en:"cake",zh:"蛋糕",b:"4上",u:5},
+{en:"wish",zh:"愿望；希望",b:"4上",u:5},
+{en:"garden",zh:"花园；菜园",b:"4上",u:5},
+{en:"tall",zh:"身高；高的",b:"4上",u:6},
+{en:"old",zh:"（多少）岁；老的",b:"4上",u:6},
+{en:"me",zh:"我（I 的宾格）",b:"4上",u:6},
+{en:"live",zh:"居住",b:"4上",u:6},
+{en:"near",zh:"在…… 附近；靠近",b:"4上",u:6},
+{en:"beside",zh:"在…… 旁边",b:"4上",u:6},
+{en:"from",zh:"离；从",b:"4上",u:6},
+{en:"come",zh:"来",b:"4下",u:1},
+{en:"sun",zh:"太阳",b:"4下",u:1},
+{en:"hot",zh:"热的",b:"4下",u:1},
+{en:"and",zh:"和",b:"4下",u:1},
+{en:"rain",zh:"雨",b:"4下",u:1},
+{en:"snow",zh:"雪",b:"4下",u:1},
+{en:"cold",zh:"寒冷的；冷的",b:"4下",u:1},
+{en:"feel",zh:"觉得；感到",b:"4下",u:1},
+{en:"sad",zh:"难过的",b:"4下",u:1},
+{en:"too",zh:"也；太",b:"4下",u:1},
+{en:"happy",zh:"高兴的",b:"4下",u:1},
+{en:"strong",zh:"强劲的；强壮的",b:"4下",u:1},
+{en:"winter",zh:"冬天",b:"4下",u:1},
+{en:"warm",zh:"温暖的",b:"4下",u:1},
+{en:"spring",zh:"春天",b:"4下",u:1},
+{en:"summer",zh:"夏天",b:"4下",u:1},
+{en:"autumn",zh:"秋天",b:"4下",u:1},
+{en:"weather",zh:"天气",b:"4下",u:2},
+{en:"rainy",zh:"阴雨的；多雨的",b:"4下",u:2},
+{en:"windy",zh:"风大的；多风的",b:"4下",u:2},
+{en:"snowy",zh:"下雪多的",b:"4下",u:2},
+{en:"cloudy",zh:"多云的；阴天的",b:"4下",u:2},
+{en:"sunny",zh:"阳光充足的",b:"4下",u:2},
+{en:"clothes",zh:"衣服",b:"4下",u:2},
+{en:"wear",zh:"穿；戴",b:"4下",u:2},
+{en:"umbrella",zh:"雨伞",b:"4下",u:2},
+{en:"shorts",zh:"短裤",b:"4下",u:2},
+{en:"T-shirt",zh:"T恤衫",b:"4下",u:2},
+{en:"shirt",zh:"衬衫",b:"4下",u:2},
+{en:"cap",zh:"便帽",b:"4下",u:2},
+{en:"coat",zh:"大衣；外套",b:"4下",u:2},
+{en:"trousers",zh:"裤子",b:"4下",u:2},
+{en:"shoe",zh:"鞋",b:"4下",u:2},
+{en:"much",zh:"许多",b:"4下",u:2},
+{en:"lovely",zh:"美丽的",b:"4下",u:2},
+{en:"dress",zh:"连衣裙",b:"4下",u:2},
+{en:"cool",zh:"凉爽的；酷的",b:"4下",u:2},
+{en:"but",zh:"但；然而",b:"4下",u:2},
+{en:"sweater",zh:"套头毛衣",b:"4下",u:2},
+{en:"season",zh:"季节",b:"4下",u:3},
+{en:"year",zh:"年",b:"4下",u:3},
+{en:"new",zh:"新的",b:"4下",u:3},
+{en:"month",zh:"月份",b:"4下",u:3},
+{en:"March",zh:"三月",b:"4下",u:3},
+{en:"April",zh:"四月",b:"4下",u:3},
+{en:"May",zh:"五月",b:"4下",u:3},
+{en:"June",zh:"六月",b:"4下",u:3},
+{en:"July",zh:"七月",b:"4下",u:3},
+{en:"August",zh:"八月",b:"4下",u:3},
+{en:"September",zh:"九月",b:"4下",u:3},
+{en:"October",zh:"十月",b:"4下",u:3},
+{en:"November",zh:"十一月",b:"4下",u:3},
+{en:"December",zh:"十二月",b:"4下",u:3},
+{en:"January",zh:"一月",b:"4下",u:3},
+{en:"February",zh:"二月",b:"4下",u:3},
+{en:"fly",zh:"放飞；飞",b:"4下",u:3},
+{en:"kite",zh:"风筝",b:"4下",u:3},
+{en:"when",zh:"什么时候",b:"4下",u:4},
+{en:"New Year's Day",zh:"元旦",b:"4下",u:4},
+{en:"or",zh:"或者",b:"4下",u:4},
+{en:"child",zh:"儿童；小孩 (复数children)",b:"4下",u:4},
+{en:"Children's Day",zh:"儿童节",b:"4下",u:4},
+{en:"sing",zh:"唱（歌）",b:"4下",u:4},
+{en:"street",zh:"大街；街道",b:"4下",u:4},
+{en:"will",zh:"（谈及将来）；（表示愿意）愿，要",b:"4下",u:4},
+{en:"party",zh:"聚会",b:"4下",u:4},
+{en:"song",zh:"歌曲",b:"4下",u:4},
+{en:"park",zh:"公园",b:"4下",u:5},
+{en:"supermarket",zh:"超市",b:"4下",u:5},
+{en:"cinema",zh:"电影院",b:"4下",u:5},
+{en:"behind",zh:"在......的后面",b:"4下",u:5},
+{en:"film",zh:"电影",b:"4下",u:5},
+{en:"front",zh:"前面",b:"4下",u:5},
+{en:"in front of",zh:"在……前面",b:"4下",u:5},
+{en:"between",zh:"在……中间",b:"4下",u:5},
+{en:"turn right",zh:"向右转",b:"4下",u:5},
+{en:"right",zh:"（向）右边；右边的",b:"4下",u:5},
+{en:"left",zh:"(向)左边；左边的",b:"4下",u:5},
+{en:"then",zh:"然后",b:"4下",u:5},
+{en:"safe",zh:"安全的",b:"4下",u:5},
+{en:"by",zh:"（表示方式）",b:"4下",u:6},
+{en:"bus",zh:"公共汽车",b:"4下",u:6},
+{en:"on foot",zh:"步行",b:"4下",u:6},
+{en:"car",zh:"小汽车",b:"4下",u:6},
+{en:"bike",zh:"自行车",b:"4下",u:6},
+{en:"taxi",zh:"出租汽车",b:"4下",u:6},
+{en:"wait for",zh:"等……",b:"4下",u:6},
+{en:"careful",zh:"小心",b:"4下",u:6},
+{en:"driver",zh:"司机",b:"4下",u:6},
+{en:"stop",zh:"停止；车站",b:"4下",u:6},
+{en:"should",zh:"应该",b:"4下",u:6},
+{en:"back",zh:"后面的",b:"4下",u:6},
+{en:"want",zh:"想要",b:"5上",u:1},
+{en:"some",zh:"一些（通常用于肯定句）",b:"5上",u:1},
+{en:"paper-cut",zh:"剪纸",b:"5上",u:1},
+{en:"cut",zh:"剪成；切；割",b:"5上",u:1},
+{en:"cut out",zh:"（从纸上）剪裁出",b:"5上",u:1},
+{en:"paper",zh:"纸",b:"5上",u:1},
+{en:"beautiful",zh:"美丽的；美好的",b:"5上",u:1},
+{en:"any",zh:"任何的（通常用于否定句和疑问句）",b:"5上",u:1},
+{en:"fan",zh:"爱好者；风扇",b:"5上",u:1},
+{en:"watch",zh:"观看",b:"5上",u:1},
+{en:"every",zh:"每一个",b:"5上",u:1},
+{en:"also",zh:"也",b:"5上",u:1},
+{en:"piano",zh:"钢琴",b:"5上",u:1},
+{en:"game",zh:"游戏；运动；比赛",b:"5上",u:2},
+{en:"easy",zh:"容易的",b:"5上",u:2},
+{en:"difficult",zh:"困难的",b:"5上",u:2},
+{en:"boat",zh:"船",b:"5上",u:2},
+{en:"begin",zh:"开始",b:"5上",u:2},
+{en:"hard",zh:"努力地；难做的",b:"5上",u:2},
+{en:"their",zh:"他们的；她们的；它们的",b:"5上",u:2},
+{en:"sit",zh:"坐",b:"5上",u:2},
+{en:"slowly",zh:"缓慢地",b:"5上",u:2},
+{en:"listen",zh:"（注意地）听；倾听",b:"5上",u:3},
+{en:"listen to",zh:"听",b:"5上",u:3},
+{en:"exercise",zh:"锻炼",b:"5上",u:3},
+{en:"hour",zh:"小时",b:"5上",u:3},
+{en:"always",zh:"总是；每次都是",b:"5上",u:3},
+{en:"never",zh:"从不",b:"5上",u:3},
+{en:"sometimes",zh:"有时",b:"5上",u:3},
+{en:"often",zh:"时常；常常",b:"5上",u:3},
+{en:"healthy",zh:"健康的",b:"5上",u:3},
+{en:"sleep",zh:"睡觉",b:"5上",u:3},
+{en:"wall",zh:"墙",b:"5上",u:3},
+{en:"TV",zh:"电视",b:"5上",u:3},
+{en:"o'clock",zh:"（表示整点）……点钟",b:"5上",u:3},
+{en:"bed",zh:"床",b:"5上",u:3},
+{en:"where",zh:"在哪里",b:"5上",u:4},
+{en:"map",zh:"地图",b:"5上",u:4},
+{en:"world",zh:"世界",b:"5上",u:4},
+{en:"China",zh:"中国",b:"5上",u:4},
+{en:"Canada",zh:"加拿大",b:"5上",u:4},
+{en:"the US",zh:"美国",b:"5上",u:4},
+{en:"the UK",zh:"英国",b:"5上",u:4},
+{en:"of",zh:"属于（某物）",b:"5上",u:4},
+{en:"speak",zh:"会说；说话",b:"5上",u:4},
+{en:"star",zh:"星",b:"5上",u:4},
+{en:"so",zh:"如此；很；因此",b:"5上",u:4},
+{en:"travel",zh:"旅行",b:"5上",u:4},
+{en:"them",zh:"他们；她们；它们（宾格）",b:"5上",u:4},
+{en:"famous",zh:"著名的",b:"5上",u:4},
+{en:"place",zh:"地方；场所",b:"5上",u:4},
+{en:"picture",zh:"照片；图画",b:"5上",u:4},
+{en:"people",zh:"人；人们",b:"5上",u:4},
+{en:"city",zh:"城市",b:"5上",u:5},
+{en:"which",zh:"哪一个；哪一些",b:"5上",u:5},
+{en:"know",zh:"知道；了解",b:"5上",u:5},
+{en:"was",zh:"是（am和is的过去式）",b:"5上",u:5},
+{en:"were",zh:"是（are的过去式）",b:"5上",u:5},
+{en:"clever",zh:"聪明的",b:"5上",u:5},
+{en:"ago",zh:"以前",b:"5上",u:5},
+{en:"show",zh:"展示；给……看",b:"5上",u:5},
+{en:"train",zh:"火车",b:"5上",u:5},
+{en:"fast",zh:"快的",b:"5上",u:5},
+{en:"saw",zh:"看见（see的过去式）",b:"5上",u:5},
+{en:"lake",zh:"湖",b:"5上",u:5},
+{en:"hill",zh:"小山；山丘",b:"5上",u:5},
+{en:"had",zh:"经历；有（have的过去式）",b:"5上",u:5},
+{en:"hometown",zh:"家乡",b:"5上",u:5},
+{en:"house",zh:"房子",b:"5上",u:5},
+{en:"these",zh:"这些",b:"5上",u:5},
+{en:"wonderful",zh:"令人高兴的；精彩的",b:"5上",u:6},
+{en:"holiday",zh:"假期；假日",b:"5上",u:6},
+{en:"did",zh:"做，干；（构成否定句和疑问句）（do的过去式）",b:"5上",u:6},
+{en:"went",zh:"去；走（go的过去式）",b:"5上",u:6},
+{en:"get",zh:"到达",b:"5上",u:6},
+{en:"plane",zh:"飞机",b:"5上",u:6},
+{en:"about",zh:"大约；左右；关于",b:"5上",u:6},
+{en:"hundred",zh:"一百",b:"5上",u:6},
+{en:"clock",zh:"时钟",b:"5上",u:6},
+{en:"ate",zh:"吃（eat的过去式）",b:"5上",u:6},
+{en:"run",zh:"跑，跑步",b:"5下",u:1},
+{en:"sorry",zh:"对不起，抱歉",b:"5下",u:1},
+{en:"jump",zh:"跳跃；蹦",b:"5下",u:1},
+{en:"sing",zh:"唱；唱歌",b:"5下",u:1},
+{en:"dance",zh:"跳舞",b:"5下",u:1},
+{en:"sit",zh:"坐，坐下",b:"5下",u:1},
+{en:"down",zh:"减少；降低；向下",b:"5下",u:1},
+{en:"stand",zh:"站，站立；位于；忍受，承受",b:"5下",u:1},
+{en:"up",zh:"向上；（尤指不愉快的事）发生",b:"5下",u:1},
+{en:"see",zh:"看见；遇见；明白",b:"5下",u:1},
+{en:"look",zh:"看；瞧；看起来",b:"5下",u:1},
+{en:"look out of",zh:"朝……外看",b:"5下",u:1},
+{en:"look at",zh:"看，看着，看一看",b:"5下",u:1},
+{en:"boy",zh:"男孩",b:"5下",u:1},
+{en:"girl",zh:"女孩",b:"5下",u:1},
+{en:"now",zh:"现在；目前",b:"5下",u:1},
+{en:"draw",zh:"画画；抽签",b:"5下",u:1},
+{en:"picture",zh:"图画；照片",b:"5下",u:1},
+{en:"woman",zh:"成年女子，妇女",b:"5下",u:1},
+{en:"baby",zh:"婴儿；动物幼崽",b:"5下",u:1},
+{en:"cry",zh:"哭",b:"5下",u:1},
+{en:"talk",zh:"说话；讨论",b:"5下",u:1},
+{en:"man",zh:"男人",b:"5下",u:1},
+{en:"sleep",zh:"睡觉",b:"5下",u:1},
+{en:"who",zh:"谁",b:"5下",u:1},
+{en:"hungry",zh:"饥饿的",b:"5下",u:1},
+{en:"water",zh:"水",b:"5下",u:1},
+{en:"tea",zh:"茶；茶水；茶叶",b:"5下",u:1},
+{en:"candy",zh:"糖果",b:"5下",u:1},
+{en:"people",zh:"人们",b:"5下",u:2},
+{en:"many",zh:"多的，许多的",b:"5下",u:2},
+{en:"child",zh:"小孩,儿童",b:"5下",u:2},
+{en:"women",zh:"（woman的复数形式）女人",b:"5下",u:2},
+{en:"men",zh:"（man的复数形式）男人",b:"5下",u:2},
+{en:"say",zh:"说；讲",b:"5下",u:2},
+{en:"help",zh:"帮助",b:"5下",u:2},
+{en:"worry",zh:"担心；担忧",b:"5下",u:2},
+{en:"sad",zh:"悲伤的，难过的",b:"5下",u:2},
+{en:"take",zh:"搭乘，乘坐",b:"5下",u:2},
+{en:"take a picture",zh:"拍照",b:"5下",u:2},
+{en:"be",zh:"在；是；就是",b:"5下",u:2},
+{en:"feel",zh:"觉得；感到",b:"5下",u:2},
+{en:"tired",zh:"疲倦的；累的",b:"5下",u:2},
+{en:"stop",zh:"停止，结束，停下",b:"5下",u:2},
+{en:"wait",zh:"等待",b:"5下",u:2},
+{en:"afraid",zh:"担心；害怕",b:"5下",u:2},
+{en:"for",zh:"为...使用,给,对",b:"5下",u:2},
+{en:"busy",zh:"忙于；忙的；忙碌的；热闹的",b:"5下",u:2},
+{en:"much",zh:"很多地；非常，很；许多，大量",b:"5下",u:3},
+{en:"write",zh:"写；写作",b:"5下",u:3},
+{en:"mum",zh:"妈妈",b:"5下",u:3},
+{en:"dad",zh:"（口语）爸爸",b:"5下",u:3},
+{en:"dear",zh:"亲爱的",b:"5下",u:3},
+{en:"fine",zh:"晴朗的；健康的",b:"5下",u:3},
+{en:"left",zh:"左，左边；左边的",b:"5下",u:3},
+{en:"right",zh:"右；右边；右边的",b:"5下",u:3},
+{en:"turn",zh:"转弯；（使）变成；轮流",b:"5下",u:3},
+{en:"wrong",zh:"错的，不正确的，不对",b:"5下",u:3},
+{en:"email",zh:"电子邮件",b:"5下",u:3},
+{en:"idea",zh:"想法；主意",b:"5下",u:3},
+{en:"computer",zh:"计算机；电脑",b:"5下",u:3},
+{en:"use",zh:"使用，用；用途",b:"5下",u:3},
+{en:"kind",zh:"体贴的；慈祥的；宽容的",b:"5下",u:3},
+{en:"us",zh:"我们",b:"5下",u:3},
+{en:"story",zh:"故事，小说",b:"5下",u:4},
+{en:"did",zh:"（do）的过去式，做，干，办",b:"5下",u:4},
+{en:"yesterday",zh:"昨天",b:"5下",u:4},
+{en:"night",zh:"夜晚，夜间",b:"5下",u:4},
+{en:"had",zh:"有；吃；进行（活动）（have的过去式）",b:"5下",u:4},
+{en:"went",zh:"（go的过去式）去",b:"5下",u:4},
+{en:"saw",zh:"（see的过去式）看见",b:"5下",u:4},
+{en:"ate",zh:"（eat的过去式）吃",b:"5下",u:4},
+{en:"photo",zh:"照片：相片",b:"5下",u:4},
+{en:"were",zh:"（are的过去式）是",b:"5下",u:4},
+{en:"was",zh:"（am，is的过去式）是",b:"5下",u:4},
+{en:"happy",zh:"高兴的；幸福的，快乐的",b:"5下",u:4},
+{en:"bought",zh:"（buy的过去式）买",b:"5下",u:4},
+{en:"back",zh:"回到，返回；背；后部",b:"5下",u:4},
+{en:"money",zh:"钱",b:"6上",u:1},
+{en:"buy",zh:"买（过去式bought）",b:"6上",u:1},
+{en:"get",zh:"获得；得到（过去式got）",b:"6上",u:1},
+{en:"gift",zh:"礼物",b:"6上",u:1},
+{en:"give",zh:"给",b:"6上",u:1},
+{en:"doll",zh:"玩偶；玩具",b:"6上",u:1},
+{en:"this",zh:"这，这个",b:"6上",u:1},
+{en:"that",zh:"那，那个",b:"6上",u:1},
+{en:"box",zh:"盒",b:"6上",u:1},
+{en:"draw",zh:"画画（过去式drew）",b:"6上",u:1},
+{en:"cup",zh:"杯子",b:"6上",u:1},
+{en:"open",zh:"开；打开",b:"6上",u:1},
+{en:"make",zh:"使得；做",b:"6上",u:1},
+{en:"watch",zh:"手表",b:"6上",u:1},
+{en:"Mrs",zh:"太太，夫人",b:"6上",u:2},
+{en:"before",zh:"在……前",b:"6上",u:2},
+{en:"find",zh:"找到；发现（过去式found）",b:"6上",u:2},
+{en:"take off",zh:"摘掉；脱下（衣服）",b:"6上",u:2},
+{en:"off",zh:"（用以表示除去了某物）",b:"6上",u:2},
+{en:"why",zh:"为什么",b:"6上",u:2},
+{en:"cry",zh:"哭",b:"6上",u:2},
+{en:"home",zh:"家；住所",b:"6上",u:3},
+{en:"idea",zh:"想法；主意",b:"6上",u:3},
+{en:"those",zh:"那些",b:"6上",u:3},
+{en:"Mr",zh:"先生",b:"6上",u:3},
+{en:"boy",zh:"男孩",b:"6上",u:3},
+{en:"girl",zh:"女孩",b:"6上",u:3},
+{en:"ill",zh:"有病；不舒服",b:"6上",u:4},
+{en:"may",zh:"可能",b:"6上",u:4},
+{en:"Miss",zh:"（学生对女老师的称呼）；女士",b:"6上",u:4},
+{en:"share",zh:"分享",b:"6上",u:4},
+{en:"glass",zh:"玻璃；玻璃杯",b:"6上",u:4},
+{en:"young",zh:"幼小的；年轻的",b:"6上",u:4},
+{en:"after",zh:"一个接着一个；在……后",b:"6上",u:4},
+{en:"turn",zh:"（使）转动；超过（某一年龄或时间）",b:"6上",u:4},
+{en:"turn off",zh:"关掉",b:"6上",u:4},
+{en:"light",zh:"灯；点燃",b:"6上",u:4},
+{en:"man",zh:"成年男子（复数men）",b:"6上",u:5},
+{en:"bring",zh:"带来",b:"6上",u:5},
+{en:"card",zh:"贺卡；卡片",b:"6上",u:5},
+{en:"top",zh:"顶端；顶部",b:"6上",u:5},
+{en:"welcome",zh:"欢迎",b:"6上",u:5},
+{en:"dress",zh:"穿衣服",b:"6上",u:5},
+{en:"dress up",zh:"穿上盛装",b:"6上",u:5},
+{en:"tomato",zh:"番茄；西红柿",b:"6上",u:5},
+{en:"yesterday",zh:"昨天",b:"6上",u:5},
+{en:"shop",zh:"商店；购物",b:"6上",u:5},
+{en:"candy",zh:"糖果；一块糖",b:"6上",u:5},
+{en:"tomorrow",zh:"明天",b:"6上",u:5},
+{en:"put up",zh:"张贴",b:"6上",u:6},
+{en:"sea",zh:"海洋",b:"6上",u:6},
+{en:"wake",zh:"醒",b:"6上",u:6},
+{en:"wake up",zh:"醒来",b:"6上",u:6},
+{en:"door",zh:"门",b:"6上",u:6},
+{en:"woman",zh:"成年女子（复数women）",b:"6上",u:6},
+{en:"busy",zh:"忙碌的",b:"6上",u:6},
+{en:"lion",zh:"狮",b:"6上",u:6},
+{en:"visit",zh:"拜访",b:"6上",u:6},
+{en:"sport",zh:"运动",b:"6下",u:1},
+{en:"football",zh:"足球（运动）",b:"6下",u:1},
+{en:"any",zh:"任何的；任一的；任何一个，任何",b:"6下",u:1},
+{en:"some",zh:"一些",b:"6下",u:1},
+{en:"wear",zh:"穿",b:"6下",u:1},
+{en:"or",zh:"还是；或者；否则",b:"6下",u:1},
+{en:"basketball",zh:"篮球",b:"6下",u:1},
+{en:"try",zh:"试；尝试；努力",b:"6下",u:1},
+{en:"heavy",zh:"重的；繁重的；沉的",b:"6下",u:1},
+{en:"difficult",zh:"困难的；难对付的",b:"6下",u:1},
+{en:"easy",zh:"容易的；简单的",b:"6下",u:1},
+{en:"hand",zh:"手",b:"6下",u:1},
+{en:"game",zh:"游戏；比赛；运动",b:"6下",u:1},
+{en:"ask",zh:"问，询问；要求；请求；邀请",b:"6下",u:1},
+{en:"very",zh:"很，非常",b:"6下",u:1},
+{en:"answer",zh:"答案",b:"6下",u:1},
+{en:"policeman",zh:"警察，男警察",b:"6下",u:1},
+{en:"healthy",zh:"健康的",b:"6下",u:2},
+{en:"strong",zh:"强壮的",b:"6下",u:2},
+{en:"before",zh:"（时间上）在……之前，早于；（位置）在……前面",b:"6下",u:2},
+{en:"after",zh:"在（时间）后;在……之后",b:"6下",u:2},
+{en:"bad",zh:"邪恶的；坏的；有害的；糟糕的",b:"6下",u:2},
+{en:"next",zh:"下一个；紧接着；接下来",b:"6下",u:2},
+{en:"often",zh:"时常；常常；经常",b:"6下",u:2},
+{en:"exercise",zh:"活动，运动；锻炼",b:"6下",u:2},
+{en:"minute",zh:"分钟；片刻",b:"6下",u:2},
+{en:"hour",zh:"小时",b:"6下",u:2},
+{en:"high",zh:"高的；在高处，向高处",b:"6下",u:2},
+{en:"fan",zh:"风扇；扇子",b:"6下",u:3},
+{en:"close",zh:"合上，关闭",b:"6下",u:3},
+{en:"angry",zh:"生气的",b:"6下",u:3},
+{en:"lake",zh:"湖；湖泊",b:"6下",u:3},
+{en:"swim",zh:"游泳",b:"6下",u:3},
+{en:"ship",zh:"（大）船；轮船",b:"6下",u:3},
+{en:"visit",zh:"拜访，参观",b:"6下",u:3},
+{en:"clever",zh:"聪明的；聪颖的",b:"6下",u:3},
+{en:"find",zh:"找到；发现",b:"6下",u:4},
+{en:"get",zh:"收到，接到；得到",b:"6下",u:4},
+{en:"party",zh:"聚会；派对",b:"6下",u:4},
+{en:"tell",zh:"告诉",b:"6下",u:4},
+{en:"begin",zh:"开始",b:"6下",u:4},
+{en:"late",zh:"晚；迟",b:"6下",u:4},
+{en:"early",zh:"早到的；早的；提早的",b:"6下",u:4},
+{en:"cake",zh:"蛋糕",b:"6下",u:4},
+{en:"every",zh:"每一个，每个；每个的；每一的",b:"6下",u:4},
+{en:"all",zh:"全，完全；全部",b:"6下",u:4},
+{en:"good-bye",zh:"再见",b:"6下",u:4},
+{en:"hear",zh:"听见",b:"6下",u:4}
+]};
+
+function loadBank(){try{const s=localStorage.getItem('marioWordBank_v1');
+ if(s){const o=JSON.parse(s);if(o&&o.items&&o.items.length>=8)return o;}}catch(e){}
+ return JSON.parse(JSON.stringify(DEFAULT_BANK));}
+let BANK=loadBank();
+function saveBank(b){BANK=b;try{localStorage.setItem('marioWordBank_v1',JSON.stringify(b));}catch(e){}updateBankStatus();}
+function updateBankStatus(){const n=activeBank().length;
+ $('#bank-status').textContent='当前词库：'+BANK.name+'（共 '+BANK.items.length+' 词，本次范围 '+n+' 词）';
+ $('#sel-bank').textContent='词库：'+BANK.name+' · 本次 '+n+'/'+BANK.items.length+' 词（标题页可改范围）';
+ const ss=$('#scope-status');if(ss)ss.textContent=scopeLabel();}
+
+/* ===== 取词范围：册别 + 单元 + 自定义词 ===== */
+const BOOK_LIST=['3上','3下','4上','4下','5上','5下','6上','6下'];
+const UNIT_LIST=[1,2,3,4,5,6];
+const SCOPE=(()=>{try{const o=JSON.parse(localStorage.getItem('marioScope_v1'));
+ if(o&&Array.isArray(o.books))return {books:new Set(o.books.length?o.books:BOOK_LIST),
+  units:(Array.isArray(o.units)&&o.units.length)?new Set(o.units):null,
+  words:Array.isArray(o.words)?o.words:[]};}catch(e){}
+ return {books:new Set(BOOK_LIST),units:null,words:[]};})();
+function saveScope(){try{localStorage.setItem('marioScope_v1',JSON.stringify({
+ books:[...SCOPE.books],units:SCOPE.units?[...SCOPE.units]:[],words:SCOPE.words}));}catch(e){}
+ renderScope();updateBankStatus();}
+function activeBank(){const all=BANK.items||[];
+ let out=all.filter(it=>{
+  if(SCOPE.words.length)return SCOPE.words.some(w=>w.toLowerCase()===String(it.en).toLowerCase());
+  if(!it.b||!it.u)return true;
+  return SCOPE.books.has(it.b)&&(!SCOPE.units||SCOPE.units.has(it.u));});
+ return out.length>=2?out:all;}
+function scopeLabel(){const bs=SCOPE.books.size===BOOK_LIST.length?'全部八册':(!SCOPE.books.size?'未选册别':[...SCOPE.books].sort().join('、'));
+ const us=!SCOPE.units?'全部单元':'第'+[...SCOPE.units].sort((a,b)=>a-b).join('、')+'单元';
+ return '范围：'+bs+' · '+us+(SCOPE.words.length?' · 自定义'+SCOPE.words.length+'词':'')+' · 可用 '+activeBank().length+' 词';}
+function renderScope(){
+ const bc=$('#scope-books'),uc=$('#scope-units');if(!bc||!uc)return;
+ bc.innerHTML=BOOK_LIST.map(b=>'<button class="chip'+(SCOPE.books.has(b)?' on':'')+'" data-b="'+b+'">'+b+'</button>').join('');
+ bc.querySelectorAll('.chip').forEach(x=>x.addEventListener('click',()=>{
+  const b=x.dataset.b;if(SCOPE.books.has(b))SCOPE.books.delete(b);else SCOPE.books.add(b);saveScope();}));
+ uc.innerHTML='<button class="chip'+(!SCOPE.units?' on':'')+'" data-u="all">全部</button>'+
+  UNIT_LIST.map(u=>'<button class="chip'+(SCOPE.units&&SCOPE.units.has(u)?' on':'')+'" data-u="'+u+'">'+u+'</button>').join('');
+ uc.querySelectorAll('.chip').forEach(x=>x.addEventListener('click',()=>{
+  if(x.dataset.u==='all')SCOPE.units=null;
+  else{const u=parseInt(x.dataset.u,10);if(!SCOPE.units)SCOPE.units=new Set();
+   if(SCOPE.units.has(u))SCOPE.units.delete(u);else SCOPE.units.add(u);
+   if(!SCOPE.units.size)SCOPE.units=null;}
+  saveScope();}));
+}
+
+function parseBank(text){const items=[],seen=new Set();let bad=0;
+ text.split(/\r?\n/).forEach(raw=>{const line=raw.trim();
+  if(!line||/^#|^\/\//.test(line))return;
+  let en=null,zh=null,m;
+  m=line.match(/^([^,，;；=\t:：]+)[,，;；=\t:：]\s*(.+)$/);
+  if(m){en=m[1];zh=m[2];}
+  else{m=line.match(/^([A-Za-z][A-Za-z'\- ]*?)\s+([\u4e00-\u9fa5].*)$/);if(m){en=m[1];zh=m[2];}}
+  if(!en||!zh){bad++;return;}
+  en=en.trim().replace(/[.。]+$/,'');zh=zh.trim();
+  if(!/^[A-Za-z][A-Za-z'\- ]*$/.test(en)||!zh){bad++;return;}
+  const k=en.toLowerCase();if(seen.has(k))return;seen.add(k);
+  items.push({en,zh});});
+ return {items,bad};}
+function ensureBank(){if(!BANK.items||BANK.items.length<8){BANK=JSON.parse(JSON.stringify(DEFAULT_BANK));
+ toast('自定义词库单词不足 8 个，已临时使用默认词库');}}
+
+/* ============ 全局状态 / HUD ============ */
+const stage=document.getElementById('stage');
+const S={mode:'solo',level:0,coins:0,mistakes:0,
+ /* 默认藏中文；换用 v2 key，打开新版本即生效，旧的显示偏好不再沿用 */
+ hideZh:(()=>{try{const v=localStorage.getItem('marioHideZh_v2');return v===null?true:v==='1';}catch(e){return true;}})(),
+ /* 念题语言：0=英文 1=中文 2=不出声 */
+ readMode:(()=>{try{const v=parseInt(localStorage.getItem('marioReadMode_v1'),10);return v===0||v===1||v===2?v:0;}catch(e){return 0;}})(),
+ soundOn:(()=>{try{return localStorage.getItem('marioSound_v1')!=='0';}catch(e){return true;}})()};
+const READ_MODES=[{mini:'🔤英',title:'念题：英文',toast:'念题改成英文'},
+                  {mini:'🀄中',title:'念题：中文',toast:'念题改成中文'},
+                  {mini:'🔇静',title:'念题：不出声',toast:'念题已关闭'}];
+let paused=false,cleanups=[],timersArr=[];
+function later(ms,fn){const id=setTimeout(()=>{timersArr=timersArr.filter(x=>x!==id);
+ if(paused){later(300,fn);return;}fn();},ms);timersArr.push(id);return id;}
+function runCleanups(){cleanups.forEach(f=>{try{f();}catch(e){}});cleanups=[];
+ timersArr.forEach(clearTimeout);timersArr=[];}
+
+let tBase=0,tStart=0,tPaused=false;
+function startTimer(){tBase=0;tStart=Date.now();tPaused=false;}
+function pauseTimer(){if(tPaused)return;tBase+=Date.now()-tStart;tPaused=true;}
+function resumeTimer(){if(!tPaused)return;tStart=Date.now();tPaused=false;}
+function getElapsed(){return tBase+(tPaused?0:Date.now()-tStart);}
+setInterval(()=>{$('#hud-time').textContent=fmt(getElapsed());},400);
+
+function updateHUD(){$('#hud-coins').textContent=S.coins;}
+function addCoins(n){S.coins+=n;updateHUD();const c=$('#hud-coins');
+ c.classList.remove('bumpc');void c.offsetWidth;c.classList.add('bumpc');}
+function setProgress(a,b){$('#hud-prog').textContent=a+'/'+b;
+ $('#hud-fill').style.width=(b?Math.round(a/b*100):0)+'%';}
+
+/* ============ 中文提示开关 / 读音开关 ============ */
+/* 隐藏中文时，题干里的中文变成橙色遮挡块；第4关花盆中文是配对答案，不受影响 */
+function zhInner(t){return S.hideZh
+ ?'<span class="zhhidden">？？？</span><span class="zhreplay">🔊</span>'
+ :'<b>'+t+'</b>';}
+function zh(t,en){return '<span class="zhhint" data-z="'+encodeURIComponent(t)+'" data-e="'+encodeURIComponent(en||'')+'" title="点这里重听题目">'+
+ zhInner(t)+'</span>';}
+function applyZhHints(){document.querySelectorAll('.zhhint').forEach(e=>{
+ const t=decodeURIComponent(e.getAttribute('data-z')||'');
+ e.innerHTML=zhInner(t);});}
+function currentHint(){const h=$('.zhhint');return h?{
+ zh:decodeURIComponent(h.getAttribute('data-z')||''),
+ en:decodeURIComponent(h.getAttribute('data-e')||'')}:null;}
+function sayCurrent(){const h=currentHint();if(h)sayPrompt(h.zh,h.en);}
+function syncOptBtns(){
+ $('#btn-hidezh-title').textContent='🙈 中文提示：'+(S.hideZh?'隐藏':'显示');
+ $('#btn-readmode-title').textContent=READ_MODES[S.readMode].title+'（点此切换）';
+ $('#btn-sound-title').textContent='🔊 读音：'+(S.soundOn?'开':'关');
+ $('#btn-hidezh').textContent=S.hideZh?'🙈':'👁';
+ $('#btn-hidezh').title=S.hideZh?'中文提示已隐藏（点此显示）':'中文提示显示中（点此隐藏）';
+ $('#btn-readmode').textContent=READ_MODES[S.readMode].mini;
+ $('#btn-readmode').title=READ_MODES[S.readMode].title+'（点此切换）';
+ $('#btn-sound').textContent=S.soundOn?'🔊':'🔇';
+ $('#btn-sound').title=S.soundOn?'读音已开（点此关闭）':'读音已关（点此打开）';
+}
+function toggleHideZh(){S.hideZh=!S.hideZh;
+ try{localStorage.setItem('marioHideZh_v2',S.hideZh?'1':'0');}catch(e){}
+ syncOptBtns();applyZhHints();
+ if($('#scr-game').classList.contains('active')){
+  toast(S.hideZh?'中文提示已隐藏，按念题设置朗读':'中文提示已显示');
+  if(S.hideZh)sayCurrent();
+  else if('speechSynthesis'in window){try{window.speechSynthesis.cancel();}catch(e){}}
+ }}
+function toggleReadMode(){S.readMode=(S.readMode+1)%3;
+ try{localStorage.setItem('marioReadMode_v1',String(S.readMode));}catch(e){}
+ syncOptBtns();
+ toast(READ_MODES[S.readMode].toast);
+ if($('#scr-game').classList.contains('active')&&S.hideZh)sayCurrent();}
+function toggleSound(){S.soundOn=!S.soundOn;
+ try{localStorage.setItem('marioSound_v1',S.soundOn?'1':'0');}catch(e){}
+ syncOptBtns();if(S.soundOn){ac();speakWord('hello');}
+ if($('#scr-game').classList.contains('active'))toast(S.soundOn?'读音已开':'读音已关');}
+
+/* 朗读英文单词：浏览器自带语音合成，离线可用（依赖系统英语语音包） */
+let _voices=[];
+function pickVoice(){
+ if(!('speechSynthesis'in window))return null;
+ _voices=window.speechSynthesis.getVoices()||[];
+ return _voices.find(v=>/^en[-_]US/i.test(v.lang))||_voices.find(v=>/^en/i.test(v.lang))||null;}
+if('speechSynthesis'in window)window.speechSynthesis.onvoiceschanged=()=>{pickVoice();pickZhVoice();};
+function speakWord(text){
+ if(!S.soundOn||!text||!('speechSynthesis'in window))return;
+ try{
+  const u=new SpeechSynthesisUtterance(String(text));
+  u.lang='en-US';u.rate=.85;u.pitch=1;
+  const v=pickVoice();if(v)u.voice=v;
+  window.speechSynthesis.cancel();
+  setTimeout(()=>{try{window.speechSynthesis.speak(u);}catch(e){}},30);
+ }catch(e){}}
+
+/* 念题：三态按钮控制念英文 / 念中文 / 不出声；跟 🔊 点选读音开关独立 */
+function pickZhVoice(){
+ if(!('speechSynthesis'in window))return null;
+ const vs=window.speechSynthesis.getVoices()||[];
+ return vs.find(v=>/^zh[-_]CN/i.test(v.lang))||vs.find(v=>/^zh[-_]Hans/i.test(v.lang))
+  ||vs.find(v=>/^zh/i.test(v.lang))||null;}
+function speakText(text,lang){
+ if(!text||!('speechSynthesis'in window))return;
+ try{
+  const u=new SpeechSynthesisUtterance(String(text));
+  u.lang=lang;u.rate=lang==='zh-CN'?.9:.85;u.pitch=1;
+  const v=lang==='zh-CN'?pickZhVoice():pickVoice();if(v)u.voice=v;
+  window.speechSynthesis.cancel();
+  setTimeout(()=>{try{window.speechSynthesis.speak(u);}catch(e){}},30);
+ }catch(e){}}
+function sayPrompt(zhText,enText){
+ if(!S.hideZh||S.readMode===2)return;
+ if(S.readMode===1)speakText(zhText,'zh-CN');
+ else speakText(enText||zhText,'en-US');}
+/* 点题干上的 ？？？🔊 按当前语言重听一遍 */
+document.addEventListener('click',e=>{
+ const h=e.target&&e.target.closest?e.target.closest('.zhhint'):null;
+ if(h)sayPrompt(decodeURIComponent(h.getAttribute('data-z')||''),
+                decodeURIComponent(h.getAttribute('data-e')||''));
+});
+
+/* ============ 游戏记录（按天存本地） ============ */
+const LOG_KEY='marioPlayLog_v1';
+function loadLog(){try{const a=JSON.parse(localStorage.getItem(LOG_KEY)||'[]');return Array.isArray(a)?a:[];}catch(e){return [];}}
+function saveLog(a){try{localStorage.setItem(LOG_KEY,JSON.stringify(a.slice(-800)));}catch(e){}}
+function todayStr(){const d=new Date();return d.getFullYear()+'-'+pad2(d.getMonth()+1)+'-'+pad2(d.getDate());}
+function recordResult(o){
+ const a=loadLog();
+ a.push(Object.assign({ts:Date.now(),day:todayStr(),mode:S.mode,level:S.level},o));
+ saveLog(a);
+}
+function openLog(){
+ const all=loadLog(),today=all.filter(x=>x.day===todayStr());
+ const sumCoins=today.reduce((s,x)=>s+(x.coins||0),0);
+ const sumMis=today.reduce((s,x)=>s+(x.mistakes||0),0);
+ const sumMs=today.reduce((s,x)=>s+(x.elapsed||0),0);
+ const wins=today.filter(x=>/获胜|通关|通过/.test(x.result||'')).length;
+ $('#log-sum').innerHTML=
+  '<div class="cell"><b>今日局数</b>'+today.length+'</div>'+
+  '<div class="cell"><b>获胜次数</b>'+wins+'</div>'+
+  '<div class="cell"><b>累计金币</b>'+sumCoins+'</div>'+
+  '<div class="cell"><b>累计失误</b>'+sumMis+'</div>'+
+  '<div class="cell"><b>累计用时</b>'+fmt(sumMs)+'</div>';
+ const list=$('#log-list');list.innerHTML='';
+ if(!today.length){list.appendChild(el('div','logempty','今天还没有记录，去玩一局吧～'));}
+ else today.slice().reverse().forEach(x=>{
+  const d=new Date(x.ts);
+  let cls='';if(/红队/.test(x.result||''))cls='lwin-red';
+  else if(/蓝队/.test(x.result||''))cls='lwin-blue';
+  else if(/追上|失败/.test(x.result||''))cls='lfail';
+  const row=el('div','logrow');
+  row.innerHTML='<span class="lt">'+pad2(d.getHours())+':'+pad2(d.getMinutes())+'</span>'+
+   '<span>'+(x.mode==='class'?'课堂版':'学生版')+'</span>'+
+   '<span>'+(LEVEL_NAMES[x.level]||'')+'</span>'+
+   '<span class="'+cls+'">'+x.result+'</span>'+
+   '<span>🪙 '+(x.coins||0)+'</span>'+
+   '<span>失误 '+(x.mistakes||0)+'</span>'+
+   '<span>⏱ '+fmt(x.elapsed||0)+'</span>'+
+   (x.score?'<span>比分 '+x.score+'</span>':'');
+  list.appendChild(row);
+ });
+ $('#modal-log').classList.add('show');
+}
+
+/* ============ 场景小工具 ============ */
+function stagePos(elm){let x=elm.offsetLeft,y=elm.offsetTop,p=elm.offsetParent;
+ while(p&&p!==stage){x+=p.offsetLeft;y+=p.offsetTop;p=p.offsetParent;}return{x,y};}
+function shake(e){e.classList.remove('shake');void e.offsetWidth;e.classList.add('shake');}
+function bump(e){e.classList.remove('bump');void e.offsetWidth;e.classList.add('bump');}
+function spawnCoin(elm,dx,delay){const c=el('div','coinfly');c.appendChild(sprite(COIN,CPAL,4));
+ const p=stagePos(elm);c.style.left=(p.x+elm.offsetWidth/2-16+(dx||0))+'px';c.style.top=(p.y-30)+'px';
+ if(delay)c.style.animationDelay=delay+'ms';stage.appendChild(c);later(1000+(delay||0),()=>c.remove());}
+function popText(t,elm){const p=el('div','pop',t);const pos=stagePos(elm);
+ p.style.left=(pos.x+elm.offsetWidth/2-14)+'px';p.style.top=(pos.y-8)+'px';
+ stage.appendChild(p);later(850,()=>p.remove());}
+function spawnPuff(elm){const p=el('div','puff');const pos=stagePos(elm);
+ p.style.left=(pos.x+elm.offsetWidth/2-15)+'px';p.style.top=(pos.y+elm.offsetHeight-28)+'px';
+ stage.appendChild(p);later(600,()=>p.remove());}
+function banner(html){const b=el('div','banner',html);stage.appendChild(b);later(1300,()=>b.remove());}
+function toast(msg){const t=el('div','toast',msg);stage.appendChild(t);later(1500,()=>t.remove());}
+
+function addSky(st){[['8%','70%'],['46%','80%'],['74%','62%']].forEach(p=>{
+ const c=el('div','cloud');c.style.left=p[0];c.style.bottom=p[1];st.appendChild(c);});
+ [[ '6%','170px','120px'],['60%','230px','150px']].forEach(p=>{
+ const h=el('div','hill');h.style.left=p[0];h.style.bottom='64px';h.style.width=p[1];h.style.height=p[2];st.appendChild(h);});
+ [['30%'],['86%']].forEach(p=>{const b=el('div','bush');b.style.left=p[0];b.style.bottom='64px';st.appendChild(b);});}
+function addGround(st){st.appendChild(el('div','ground'));}
+
+function marioActor(sc){const wrap=el('div','mario');
+ const cv={stand:sprite(MARIO.stand,MPAL,sc),walk:sprite(MARIO.walk,MPAL,sc),jump:sprite(MARIO.jump,MPAL,sc)};
+ Object.values(cv).forEach(c=>wrap.appendChild(c));
+ let pose='stand',dir=1;
+ function set(p,d){if(d!==undefined&&d!==dir){dir=d;
+   Object.values(cv).forEach(c=>c.style.transform=dir===1?'none':'scaleX(-1)');}
+  if(p!==pose){pose=p;Object.keys(cv).forEach(k=>cv[k].style.display=k===p?'block':'none');}}
+ set('stand',1);
+ return {el:wrap,set};}
+
+/* ============ 页面切换 ============ */
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+function hideOvl(id){const e=document.getElementById(id);if(e)e.classList.remove('show');}
+function goSelect(){runCleanups();paused=false;['ovl-pause','ovl-result','modal-bank','modal-help'].forEach(hideOvl);
+ pauseTimer();enterSelect();show('#scr-select');}
+function enterSelect(){$('#mode-pill').textContent='当前模式：'+(S.mode==='class'?'课堂版（双队PK）':'学生版（键盘闯关）');
+ updateBankStatus();}
+
+/* ============ 关卡框架 ============ */
+const LEVEL_NAMES=['','第1关 · 蘑菇原野','第2关 · 金币矿洞','第3关 · 连词踩蘑菇','第4关 · 水管花园'];
+const INTRO={1:['🍄 蘑菇原野','问号砖选词'],2:['🪙 金币矿洞','顶砖拼写'],3:['🌸 连词踩蘑菇','造句排序'],4:['🚿 水管花园','中英配对']};
+function hintText(n){
+ if(n===1)return S.mode==='solo'
+  ?'键盘 A/D 或 ←→ 移动，W / 空格 / ↑ 起跳 —— 跳到正确词块下方用头去顶！'
+  :'红蓝两队轮流操作鼠标：看中间的中文意思，抢点自己区域的正确单词！点错冷却 2 秒，先得 5 金币获胜';
+ if(n===2)return S.mode==='class'
+  ?'红蓝两队看同一个中文，按顺序点自己区域的字母砖拼单词；谁先拼对谁得 1 分，先拿 5 分获胜！'
+  :'看中文意思，按顺序点击字母砖拼出单词：点对顶出金币，点错砖块不动';
+ if(n===3)return S.mode==='class'
+  ?'红蓝两队同时排同一句话（含标点），谁先排对谁得 1 分；排错清空重来，先拿 3 分获胜！'
+  :'按顺序点击词块拼成完整句子（标点也要放进去）；排错一次，蘑菇就逼近一格，小心被追上！';
+ return S.mode==='class'
+  ?'红蓝两队配同一组词：先点英文水管再点中文花盆，谁先配完 4 对赢一轮，先赢 2 轮获胜！'
+  :'先点一个水管上的英文单词，再点对应中文的花盆；配对成功就会"噗"地开出一朵花！';}
+function levelIntro(n){const d=el('div','lvlintro','<b>'+INTRO[n][0]+' '+INTRO[n][1]+'</b><span>准备——开始！</span>');
+ stage.appendChild(d);later(1200,()=>d.remove());}
+
+function startLevel(n){
+ runCleanups();paused=false;['ovl-pause','ovl-result'].forEach(hideOvl);
+ S.level=n;S.coins=0;S.mistakes=0;
+ show('#scr-game');
+ $('#hud-lv').textContent=LEVEL_NAMES[n];
+ $('#hintbar').textContent=hintText(n);
+ stage.className='stage lv'+n;stage.innerHTML='';
+ updateHUD();setProgress(0,0);startTimer();
+ levelIntro(n);ensureBank();
+ [null,()=>S.mode==='solo'?L1.solo():L1.duo(),
+    ()=>S.mode==='solo'?L2.start():L2.duo(),
+    ()=>S.mode==='solo'?L3.start():L3.duo(),
+    ()=>S.mode==='solo'?L4.start():L4.duo()][n]();
+}
+function finishLevel(){
+ runCleanups();pauseTimer();
+ recordResult({result:S.level===4?'全部通关':'关卡通过',coins:S.coins,mistakes:S.mistakes,elapsed:getElapsed()});
+ const stars=S.mistakes===0?3:S.mistakes<=3?2:1;
+ const last=S.level===4;const btns=[];
+ if(!last)btns.push({t:'➡ 下一关',primary:1,fn:()=>{hideOvl('ovl-result');startLevel(S.level+1);}});
+ btns.push({t:'↻ 重玩本关',fn:()=>{hideOvl('ovl-result');startLevel(S.level);}});
+ btns.push({t:'🏠 返回选关',fn:goSelect});
+ showResult({title:last?'🎉 全部通关！':'🎉 关卡通过！',sub:last?'四关全部完成，你太棒啦！':null,
+  stats:[['金币',S.coins+' 枚'],['失误',S.mistakes+' 次'],['用时',fmt(getElapsed())],
+   ['评价','★'.repeat(stars)+'☆'.repeat(3-stars)]],btns});
+ sWin();
+}
+function showResult(o){const box=$('#result-box');box.innerHTML='';
+ box.appendChild(el('h2',null,o.title));
+ if(o.sub)box.appendChild(el('p','muted',o.sub));
+ if(o.stats){const g=el('div','rstats');o.stats.forEach(kv=>g.appendChild(el('div','rstat','<b>'+kv[0]+'</b>'+kv[1])));box.appendChild(g);}
+ const row=el('div','rbtns');(o.btns||[]).forEach(b=>{const bt=el('button','btn'+(b.primary?' primary':''),b.t);bt.onclick=b.fn;row.appendChild(bt);});
+ const lb=el('button','btn mini','📊 今日记录');lb.onclick=openLog;row.appendChild(lb);
+ box.appendChild(row);$('#ovl-result').classList.add('show');}
+
+function togglePause(){
+ if(!$('#scr-game').classList.contains('active'))return;
+ if($('#ovl-result').classList.contains('show'))return;
+ if(paused){paused=false;resumeTimer();hideOvl('ovl-pause');stage.classList.remove('f-anim');}
+ else{paused=true;pauseTimer();$('#ovl-pause').classList.add('show');stage.classList.add('f-anim');}}
+
+/* ============ 第1关：蘑菇原野 ============ */
+const L1={};
+/* 学生版：键盘操控 */
+L1.solo=function(){
+ const st=stage;
+ const N=8;let round=0,done=0,answer=null,busy=false,blocks=[];
+ const BT=Math.round(st.clientHeight*0.34);
+ const actor=marioActor(4);st.appendChild(actor.el);
+ const prompt=el('div','sign big');st.appendChild(prompt);
+ let mx=30,my=0,vy=0,onG=true,dir=1,frameT=0,walkFlip=false;
+ const keys={l:false,r:false};
+ const jump=()=>{if(onG&&!paused){vy=880;onG=false;sJump();}};
+ /* 键盘 */
+ const kd=e=>{if(paused)return;const k=e.key.toLowerCase();
+  if(k==='a'||k==='arrowleft')keys.l=true;
+  else if(k==='d'||k==='arrowright')keys.r=true;
+  else if(k==='w'||k===' '||k==='arrowup')jump();
+  else return;e.preventDefault();};
+ const ku=e=>{const k=e.key.toLowerCase();
+  if(k==='a'||k==='arrowleft')keys.l=false;if(k==='d'||k==='arrowright')keys.r=false;};
+ document.addEventListener('keydown',kd);document.addEventListener('keyup',ku);
+ /* 触屏按键 */
+ const tc=el('div','touchctl','<button data-k="l">◀</button><button data-k="j">▲</button><button data-k="r">▶</button>');
+ st.appendChild(tc);
+ tc.querySelectorAll('button').forEach(b=>{
+  b.addEventListener('pointerdown',e=>{e.preventDefault();
+   if(b.dataset.k==='l')keys.l=true;else if(b.dataset.k==='r')keys.r=true;else jump();});
+  ['pointerup','pointerleave'].forEach(ev=>b.addEventListener(ev,()=>{
+   if(b.dataset.k==='l')keys.l=false;if(b.dataset.k==='r')keys.r=false;}));});
+ cleanups.push(()=>{document.removeEventListener('keydown',kd);document.removeEventListener('keyup',ku);cancelAnimationFrame(raf);});
+
+ function newRound(){
+  round++;setProgress(round-1,N);
+  const w=rnd(activeBank());
+  const others=shuffle(activeBank().filter(x=>x.en!==w.en)).slice(0,4);
+  answer=w;
+  prompt.innerHTML='找出 '+zh(w.zh,w.en)+' 的英文';sayPrompt(w.zh,w.en);
+  blocks.forEach(b=>b.el.remove());blocks=[];
+  const ws=shuffle([w].concat(others)),n=ws.length;
+  ws.forEach((wo,i)=>{const c=(i+0.5)/n*100;
+   const bEl=el('div','qblock');const sp=el('span','w');sp.textContent=wo.en;bEl.appendChild(sp);
+   bEl.style.left='calc('+c+'% - 32px)';bEl.style.top=BT+'px';st.appendChild(bEl);
+   blocks.push({el:bEl,w:wo});});
+ }
+ function hit(b){
+  if(busy)return;
+  speakWord(b.w.en);
+  if(b.w.en===answer.en){
+   busy=true;bump(b.el);sCoin();spawnCoin(b.el);popText('+1',b.el);addCoins(1);
+   b.el.classList.add('used');done=round;setProgress(done,N);
+   later(780,()=>{busy=false;if(done>=N)finishLevel();else newRound();});
+  }else{shake(b.el);sWrong();S.mistakes++;}
+ }
+ let lastT=0,raf=0;
+ function loop(t){
+  raf=requestAnimationFrame(loop);
+  if(paused){lastT=t;return;}
+  const dt=Math.min(.033,(t-lastT)/1000||.016);lastT=t;
+  const W=st.clientWidth,Hh=st.clientHeight;
+  let moving=false;
+  if(keys.l){mx-=300*dt;dir=-1;moving=true;}
+  if(keys.r){mx+=300*dt;dir=1;moving=true;}
+  mx=Math.max(4,Math.min(W-52,mx));
+  if(!onG){
+   vy-=1500*dt;my+=vy*dt;
+   if(vy>0){const mTop=Hh-64-56-my;
+    for(const b of blocks){const bl=b.el.offsetLeft,br=bl+b.el.offsetWidth,bb=BT+56;
+     if(mTop<=bb&&mTop>bb-34&&mx+44>bl+6&&mx+4<br-6){vy=-140;hit(b);break;}}}
+   if(my<=0){my=0;vy=0;onG=true;}
+  }
+  let p;
+  if(!onG)p='jump';
+  else if(moving){frameT+=dt;if(frameT>.12){frameT=0;walkFlip=!walkFlip;}p=walkFlip?'walk':'stand';}
+  else p='stand';
+  actor.set(p,dir);
+  actor.el.style.transform='translate('+mx+'px,'+(-my)+'px)';
+ }
+ raf=requestAnimationFrame(loop);
+ newRound();
+};
+/* 课堂版：双队 PK */
+L1.duo=function(){
+ const st=stage;
+ st.appendChild(el('div','divider'));
+ const sign=el('div','sign big');st.appendChild(sign);
+ const tagR=el('div','teamtag red','红队 <span class="sc" id="sc-r">0</span><span class="lock" id="lk-r"></span>');
+ const tagB=el('div','teamtag blue','蓝队 <span class="sc" id="sc-b">0</span><span class="lock" id="lk-b"></span>');
+ st.appendChild(tagR);st.appendChild(tagB);
+ const WIN=5;
+ const actors={red:marioActor(4),blue:marioActor(4)};
+ actors.red.el.style.left='2%';actors.blue.el.style.left='calc(98% - 48px)';actors.blue.set('stand',-1);
+ st.appendChild(actors.red.el);st.appendChild(actors.blue.el);
+ let scores={red:0,blue:0},lock={red:false,blue:false},busy=false,answer=null,blocks=[];
+ function newRound(){
+  busy=false;lock.red=lock.blue=false;$('#lk-r').textContent='';$('#lk-b').textContent='';
+  actors.red.el.classList.remove('slid');actors.blue.el.classList.remove('slid');
+  actors.red.el.style.left='2%';actors.blue.el.style.left='calc(98% - 48px)';
+  actors.red.set('stand',1);actors.blue.set('stand',-1);
+  const w=rnd(activeBank());
+  const others=shuffle(activeBank().filter(x=>x.en!==w.en)).slice(0,3);
+  answer=w;
+  sign.innerHTML='找出 '+zh(w.zh,w.en)+' 的英文';sayPrompt(w.zh,w.en);
+  blocks.forEach(b=>b.el.remove());blocks=[];
+  [['red',[10,22,34,46]],['blue',[54,66,78,90]]].forEach(a=>{
+   const team=a[0],xs=a[1];
+   shuffle([w].concat(others)).forEach((wo,i)=>{
+    const bEl=el('div','qblock');const sp=el('span','w');sp.textContent=wo.en;bEl.appendChild(sp);
+    bEl.style.left='calc('+xs[i]+'% - 34px)';bEl.style.top='190px';
+    bEl.addEventListener('click',()=>click(team,wo,bEl));
+    st.appendChild(bEl);blocks.push({el:bEl});});});
+ }
+ function click(team,wo,bEl){
+  if(busy||lock[team])return;
+  speakWord(wo.en);
+  if(wo.en===answer.en){busy=true;runMario(team,bEl);}
+  else{shake(bEl);sWrong();S.mistakes++;lock[team]=true;
+   const lk=team==='red'?$('#lk-r'):$('#lk-b');lk.textContent='失误！冷却2秒';
+   later(2000,()=>{lock[team]=false;lk.textContent='';});}
+ }
+ function runMario(team,bEl){
+  const act=actors[team];
+  act.el.classList.add('slid');
+  act.el.style.left=(team==='red'?bEl.offsetLeft-act.el.offsetWidth-4:bEl.offsetLeft+bEl.offsetWidth+4)+'px';
+  later(500,()=>{bump(bEl);act.set('jump',team==='red'?1:-1);act.el.classList.add('hop');
+   later(150,()=>{spawnCoin(bEl);sCoin();addCoins(1);
+    scores[team]++;(team==='red'?$('#sc-r'):$('#sc-b')).textContent=scores[team];
+    setProgress(Math.max(scores.red,scores.blue),WIN);
+    later(680,()=>{act.el.classList.remove('hop');
+     if(scores[team]>=WIN)teamWin(team);else newRound();});});});
+ }
+ function teamWin(team){
+  runCleanups();pauseTimer();sWin();
+  recordResult({result:(team==='red'?'红队获胜':'蓝队获胜'),coins:S.coins,mistakes:S.mistakes,
+   elapsed:getElapsed(),score:scores.red+'-'+scores.blue});
+  showResult({title:'🏆 '+(team==='red'?'红队':'蓝队')+'获胜！',
+   stats:[['红队金币',scores.red+' 枚'],['蓝队金币',scores.blue+' 枚'],['失误',S.mistakes+' 次'],['用时',fmt(getElapsed())]],
+   btns:[{t:'🔁 再来一局',primary:1,fn:()=>{hideOvl('ovl-result');startLevel(1);}},{t:'🏠 返回选关',fn:goSelect}]});
+ }
+ newRound();
+};
+
+/* ============ 第2关：金币矿洞 ============ */
+const L2={start:function(){
+ const st=stage;
+ [['3%'],['94%']].forEach(p=>{const b=el('div','beam');b.style.left=p[0];st.appendChild(b);});
+ addGround(st);
+ const sign=el('div','sign big');st.appendChild(sign);
+ const brow=el('div','brow');st.appendChild(brow);
+ const slotRow=el('div','slots');st.appendChild(slotRow);
+ const actor=marioActor(4);actor.el.style.left='calc(50% - 24px)';st.appendChild(actor.el);
+ const N=5;let done=0,word='',prog=0,busy=false;
+ const pool=()=>{const P=activeBank();const p=P.filter(w=>w.en.length>=3&&w.en.length<=8&&!w.en.includes(' '));return p.length?p:P;};
+ function newWord(){
+  const item=rnd(pool());word=item.en;prog=0;
+  sign.innerHTML='意思：'+zh(item.zh,item.en);sayPrompt(item.zh,item.en);
+  slotRow.innerHTML='';
+  word.split('').forEach(()=>slotRow.appendChild(el('span','slot','_')));
+  const distract=shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c=>!word.includes(c))).slice(0,3);
+  brow.innerHTML='';
+  shuffle(word.split('').concat(distract)).forEach(ch=>{
+   const b=el('div','qblock letter',ch);
+   b.addEventListener('click',()=>pick(ch,b));
+   brow.appendChild(b);});
+  actor.set('stand',1);
+  actor.el.style.left='calc(50% - 24px)';
+ }
+ function pick(ch,b){
+  if(busy||b.classList.contains('used'))return;
+  if(ch!==word[prog]){shake(b);sWrong();S.mistakes++;return;}
+  busy=true;
+  const bx=b.offsetLeft+b.offsetWidth/2;
+  actor.el.classList.add('slid2');actor.el.style.left=(bx-24)+'px';
+  later(180,()=>{bump(b);actor.set('jump',1);actor.el.classList.add('hop');
+   later(130,()=>spawnCoin(b));
+   later(240,()=>{b.classList.remove('bump');b.classList.add('used');
+    const s=slotRow.children[prog];s.textContent=ch;s.classList.add('fill');
+    prog++;actor.el.classList.remove('hop');busy=false;sCoin();
+    if(prog>=word.length){busy=true;addCoins(3);done++;setProgress(done,N);
+     speakWord(word);banner('拼对啦！ '+word+'　+3 金币');sWin();
+     later(1400,()=>{busy=false;if(done>=N)finishLevel();else newWord();});}});});
+ }
+ newWord();
+}};
+
+/* ============ 第3关：连词踩蘑菇 ============ */
+const L3={start:function(){
+ const st=stage;
+ addSky(st);addGround(st);
+ st.appendChild(el('div','lvtag','🌸 连词成句 · 排错蘑菇会逼近'));
+ const prompt=el('div','sign big');st.appendChild(prompt);
+ const chips=el('div','chips');st.appendChild(chips);
+ const tiles=el('div','tiles');st.appendChild(tiles);
+ const btnRow=el('div','minirow');st.appendChild(btnRow);
+ const track=el('div','track');for(let i=1;i<=6;i++)track.appendChild(el('div','trackcell',i));st.appendChild(track);
+ const shroomEl=el('div','shroom');shroomEl.appendChild(sprite(SHROOM,SPAL,4));st.appendChild(shroomEl);
+ const distEl=el('div','dist');st.appendChild(distEl);
+ const actor=marioActor(4);actor.el.style.left='16px';st.appendChild(actor.el);
+
+ const SENT=[
+  {en:'I am a student.',zh:'我是一名学生。'},
+  {en:'This is my pencil.',zh:'这是我的铅笔。'},
+  {en:'I like my school.',zh:'我喜欢我的学校。'},
+  {en:'She is my friend.',zh:'她是我的朋友。'},
+  {en:'It is a green book.',zh:'它是一本绿色的书。'},
+  {en:'My father is tall.',zh:'我的爸爸很高。'},
+  {en:'What is your name?',zh:'你叫什么名字？'},
+  {en:'How are you?',zh:'你好吗？'},
+  {en:'I see ten desks.',zh:'我看见十张课桌。'},
+  {en:'He has two big eyes.',zh:'他有两只大眼睛。'},
+  {en:'Nice to meet you.',zh:'很高兴见到你。'},
+  {en:'This is my family.',zh:'这是我的家庭。'}];
+ const N=3,DMAX=6;let done=0,d=DMAX,cur=null,target=[],answer=[],tileEls=[],busy=false;
+
+ function setDist(nd){
+  d=nd;
+  if(d<=0){caught();return;}
+  const tw=track.clientWidth,x0=track.offsetLeft,x1=x0+tw,cell=tw/6;
+  const mx=x1-(DMAX-d)*cell-cell/2;
+  shroomEl.style.left=mx+'px';distEl.style.left=mx+'px';
+  distEl.textContent='⚠ 距离你还剩 '+d+' 格';}
+ function build(){
+  answer=[];chips.innerHTML='';
+  let s;do{s=rnd(SENT);}while(cur&&s.en===cur.en);cur=s;
+  prompt.innerHTML='用英语说：'+zh(cur.zh,cur.en);sayPrompt(cur.zh,cur.en);
+  const m=cur.en.match(/^(.+?)([.?!])$/);
+  const words=m[1].trim().split(/\s+/),punct=m[2];
+  target=words.concat([punct]);
+  tiles.innerHTML='';tileEls=[];
+  shuffle(words.concat([punct])).forEach(t=>{
+   const e=el('div','tile');e.textContent=t;
+   e.addEventListener('click',()=>pickTile(t,e));
+   tiles.appendChild(e);tileEls.push({t,e});});
+  actor.el.classList.remove('slid');actor.el.style.left='16px';actor.set('stand',1);
+  shroomEl.classList.remove('dead');
+  setDist(DMAX);}
+ function renderChips(){chips.innerHTML='';
+  answer.forEach(x=>{const c=el('div','chip');c.textContent=x.t;
+   if(x.t==='.'||x.t==='?')c.classList.add('punc');chips.appendChild(c);});}
+ function pickTile(t,e){
+  if(busy||e.classList.contains('off'))return;
+  speakWord(t);
+  e.classList.add('off');answer.push({t,e});renderChips();sPop();
+  if(answer.length===target.length)check();}
+ function undo(){if(busy||!answer.length)return;
+  const x=answer.pop();x.e.classList.remove('off');renderChips();sPop();}
+ function reshuffle(){if(busy)return;
+  shuffle(tileEls.filter(x=>!x.e.classList.contains('off'))).forEach(x=>tiles.appendChild(x.e));sPop();}
+ function hint(){if(busy)return;
+  const need=target[answer.length];
+  const x=tileEls.find(t=>t.t===need&&!t.e.classList.contains('off'));
+  if(x){x.e.classList.add('hint');later(1700,()=>x.e.classList.remove('hint'));sPop();}}
+ [['↩ 撤回',undo],['🔀 重排',reshuffle],['💡 提示下一块',hint]].forEach(a=>{
+  const b=el('button','btn mini',a[0]);b.addEventListener('click',a[1]);btnRow.appendChild(b);});
+ function check(){
+  busy=true;
+  const ok=answer.every((x,i)=>x.t===target[i]);
+  if(ok){
+   const sx=parseFloat(shroomEl.style.left)||600;
+   actor.el.classList.add('slid');actor.el.style.left=(sx-34)+'px';
+   later(520,()=>{actor.set('jump',1);actor.el.classList.add('hop');
+    later(260,()=>{shroomEl.classList.add('dead');sStomp();
+     for(let i=0;i<3;i++)spawnCoin(shroomEl,(i-1)*26,i*90);
+     addCoins(3);popText('+3',shroomEl);});});
+   done++;setProgress(done,N);
+   later(1500,()=>{actor.el.classList.remove('hop');busy=false;
+    if(done>=N)finishLevel();else build();});
+  }else{
+   S.mistakes++;sWrong();
+   st.classList.add('quake');later(420,()=>st.classList.remove('quake'));
+   setDist(d-1);
+   if(d>0){toast('排错啦！蘑菇前进了一格！');
+    later(750,()=>{busy=false;
+     answer.forEach(x=>x.e.classList.remove('off'));answer=[];renderChips();});}}
+ }
+ function caught(){busy=true;runCleanups();pauseTimer();
+  recordResult({result:'被蘑菇追上',coins:S.coins,mistakes:S.mistakes,elapsed:getElapsed()});
+  showResult({title:'😢 被蘑菇追上了！',sub:'别灰心，再来一次一定行！',
+   stats:[['已完成',done+' / '+N+' 句'],['金币',S.coins+' 枚']],
+   btns:[{t:'↻ 再挑战一次',primary:1,fn:()=>{hideOvl('ovl-result');startLevel(3);}},{t:'🏠 返回选关',fn:goSelect}]});}
+ build();
+}};
+
+/* ============ 第4关：水管花园 ============ */
+const L4={start:function(){
+ const st=stage;
+ addSky(st);addGround(st);
+ st.appendChild(el('div','lvtag','🚿 中英配对 · 先英文后中文'));
+ const actor=marioActor(4);actor.el.style.left='20px';st.appendChild(actor.el);
+ let pipes=[],flowers=[],sel=null,busy=false,pairs=0;const TOTAL=8,PER=4;
+ let used=[]; /* 记住上一轮的词，避免两轮撞词 */
+ function sample4(){const rest=activeBank().filter(w=>!used.some(x=>x.en===w.en));
+  const p=rest.length>=PER?rest:(activeBank().length>=PER?activeBank():BANK.items);const pick=shuffle(p).slice(0,PER);
+  used=pick.map(w=>w.en);return pick;}
+ function newRound(){
+  sel=null;
+  pipes.forEach(p=>p.el.remove());pipes=[];
+  flowers.forEach(f=>f.el.remove());flowers=[];
+  const ws=sample4(),xs=[10,32,54,76];
+  ws.forEach((w,i)=>{
+   const p=el('div','pipeh','<div class="pbody"></div><div class="plip"></div>');
+   const plate=el('div','plate');plate.textContent=w.en;p.appendChild(plate);
+   p.style.left='calc('+xs[i]+'% - 43px)';
+   p.addEventListener('click',()=>pickPipe(w,p));
+   st.appendChild(p);pipes.push({w,el:p});});
+  shuffle(ws).forEach((w,i)=>{
+   const f=el('div','flspot');
+   const zh=el('div','zh');zh.textContent=w.zh;
+   f.appendChild(zh);f.appendChild(el('div','bud'));f.appendChild(el('div','pot'));
+   f.style.left=xs[i]+'%';
+   f.addEventListener('click',()=>pickFlower(w,f));
+   st.appendChild(f);flowers.push({w,el:f});});
+  actor.el.classList.add('slid');actor.el.style.left='20px';
+  setProgress(pairs,TOTAL);}
+ function pickPipe(w,p){
+  if(busy||p.classList.contains('done'))return;
+  speakWord(w.en);
+  pipes.forEach(x=>x.el.classList.remove('sel'));
+  p.classList.add('sel');sel={w,p};sPop();
+  actor.el.classList.add('slid');
+  actor.el.style.left=(p.offsetLeft+p.offsetWidth/2-24)+'px';}
+ function pickFlower(w,f){
+  if(busy||f.classList.contains('done'))return;
+  if(!sel){toast('先点一个水管上的英文单词哦！');shake(f);return;}
+  if(w.en===sel.w.en){
+   busy=true;sPipe();
+   actor.el.classList.add('sink');
+   later(420,()=>spawnPuff(sel.p));
+   later(680,()=>{
+    f.classList.add('done');
+    const bud=f.querySelector('.bud');
+    if(bud){const fc=sprite(FLOWER,FPAL,3);fc.classList.add('bloomanim');
+     bud.replaceWith(fc);}
+    sel.p.classList.remove('sel');sel.p.classList.add('done');
+    spawnCoin(f);sCoin();addCoins(1);pairs++;setProgress(pairs,TOTAL);
+    actor.el.classList.remove('sink');actor.el.style.left='20px';
+    sel=null;busy=false;
+    if(pairs>=TOTAL)later(600,finishLevel);
+    else if(flowers.every(x=>x.el.classList.contains('done')))later(900,newRound);});
+  }else{shake(f);sWrong();S.mistakes++;toast('不匹配，再想想！');}}
+ newRound();
+}};
+
+/* ============ 词库弹窗 ============ */
+function openBank(){
+ $('#bank-text').value=BANK.items.map(i=>i.en+' '+i.zh).join('\n');
+ $('#bank-msg').className='bankmsg';$('#bank-msg').textContent='';
+ $('#modal-bank').classList.add('show');}
+$('#btn-bank').addEventListener('click',openBank);
+$('#bank-close').addEventListener('click',()=>hideOvl('modal-bank'));
+$('#bank-apply').addEventListener('click',()=>{
+ const {items,bad}=parseBank($('#bank-text').value);
+ const msg=$('#bank-msg');
+ if(items.length<8){msg.className='bankmsg err';
+  msg.textContent='只解析到 '+items.length+' 个有效单词（至少需要 8 个）'+(bad?'，有 '+bad+' 行没看懂（格式：英文 中文）':'');}
+ else{saveBank({name:'自定义词表（'+items.length+'词）',items});
+  msg.className='bankmsg';
+  msg.textContent='✔ 已使用新词表：共 '+items.length+' 个单词'+(bad?'（已忽略 '+bad+' 行无效内容）':'');}});
+$('#bank-default').addEventListener('click',()=>{
+ saveBank(JSON.parse(JSON.stringify(DEFAULT_BANK)));
+ $('#bank-text').value=BANK.items.map(i=>i.en+' '+i.zh).join('\n');
+ const msg=$('#bank-msg');msg.className='bankmsg';
+ msg.textContent='✔ 已恢复默认词库：2026新版冀教版三起 3-6年级全册（'+BANK.items.length+' 词）';});
+$('#bank-download').addEventListener('click',()=>{
+ const tpl='\ufeff# 单词闯关词表模板（每行一个单词）\n# 格式：英文 中文（空格、逗号或 Tab 分隔都可以）\n# 以 # 开头的行会被忽略；建议准备 20 个以上单词\napple 苹果\nschool 学校\npencil box 铅笔盒\nred 红色\ntwo 二\ncat 猫\n';
+ const blob=new Blob([tpl],{type:'text/plain;charset=utf-8'});
+ const a=document.createElement('a');a.href=URL.createObjectURL(blob);
+ a.download='单词闯关-词表模板.txt';a.click();});
+$('#bank-upload-btn').addEventListener('click',()=>$('#bank-file').click());
+$('#bank-file').addEventListener('change',e=>{
+ const f=e.target.files[0];if(!f)return;
+ const r=new FileReader();
+ r.onload=()=>{$('#bank-text').value=r.result;
+  $('#bank-apply').click();$('#bank-msg').textContent+='（已读取文件：'+f.name+'）';};
+ r.readAsText(f,'utf-8');e.target.value='';});
+
+/* ============ 其它交互 ============ */
+$('#btn-hidezh-title').addEventListener('click',toggleHideZh);
+$('#btn-hidezh').addEventListener('click',toggleHideZh);
+$('#btn-readmode-title').addEventListener('click',toggleReadMode);
+$('#btn-readmode').addEventListener('click',toggleReadMode);
+$('#btn-sound-title').addEventListener('click',toggleSound);
+$('#btn-sound').addEventListener('click',toggleSound);
+syncOptBtns();
+renderScope();
+$('#scope-all').addEventListener('click',()=>{SCOPE.books=new Set(BOOK_LIST);SCOPE.units=null;SCOPE.words=[];saveScope();toast('已选全部八册、全部单元');});
+$('#scope-none').addEventListener('click',()=>{SCOPE.books=new Set();SCOPE.units=null;SCOPE.words=[];saveScope();toast('已清空范围（出题会回退到全库）');});
+$('#scope-custom').addEventListener('click',()=>{
+ $('#scope-words').value=SCOPE.words.join('\n');$('#scope-words-msg').textContent='';
+ $('#modal-scope-custom').classList.add('show');});
+$('#scope-words-close').addEventListener('click',()=>hideOvl('modal-scope-custom'));
+$('#scope-words-apply').addEventListener('click',()=>{
+ const ws=$('#scope-words').value.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)
+  .map(x=>x.split(/[\s,，]+/)[0]).filter(Boolean);
+ SCOPE.words=ws;saveScope();
+ const msg=$('#scope-words-msg');msg.className='bankmsg';
+ msg.textContent=ws.length?('✔ 已限定 '+ws.length+' 词，词库里命中 '+activeBank().length+' 个'):'✔ 已取消自定义范围，回到册别/单元筛选';
+ toast(ws.length?('范围限定为 '+ws.length+' 词'):'已取消自定义范围');});
+$('#btn-log').addEventListener('click',openLog);
+$('#log-close').addEventListener('click',()=>hideOvl('modal-log'));
+$('#log-clear').addEventListener('click',()=>{
+ if(!confirm('确定清空今天的所有记录吗？清空后无法恢复。'))return;
+ saveLog(loadLog().filter(x=>x.day!==todayStr()));
+ openLog();});
+$('#btn-help').addEventListener('click',()=>$('#modal-help').classList.add('show'));
+$('#help-close').addEventListener('click',()=>hideOvl('modal-help'));
+$('#btn-class').addEventListener('click',()=>{S.mode='class';enterSelect();show('#scr-select');});
+$('#btn-solo').addEventListener('click',()=>{S.mode='solo';enterSelect();show('#scr-select');});
+$('#btn-backtitle').addEventListener('click',()=>show('#scr-title'));
+document.querySelectorAll('.lvcard').forEach(c=>
+ c.addEventListener('click',()=>startLevel(+c.dataset.lv)));
+$('#btn-pause').addEventListener('click',togglePause);
+$('#p-resume').addEventListener('click',togglePause);
+$('#btn-restart').addEventListener('click',()=>{hideOvl('ovl-pause');paused=false;startLevel(S.level);});
+$('#p-restart').addEventListener('click',()=>{hideOvl('ovl-pause');paused=false;startLevel(S.level);});
+$('#btn-exit').addEventListener('click',goSelect);
+$('#p-exit').addEventListener('click',()=>{hideOvl('ovl-pause');goSelect();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape')togglePause();});
+document.addEventListener('click',e=>{const b=e.target.closest('button');if(b)b.blur();});
+
+/* ============ 标题页装饰 ============ */
+(function(){
+ const s=$('#title-scene');s.innerHTML='';
+ [15,42,69].forEach(x=>{const b=el('div','qblock','?');b.style.left=x+'%';b.style.top='6px';b.style.cursor='default';s.appendChild(b);});
+ [28,55,82].forEach((x,i)=>{const c=el('div','tfloat');c.style.left=x+'%';c.style.top='36px';
+  c.style.animationDelay=(i*.3)+'s';c.appendChild(sprite(COIN,CPAL,3));s.appendChild(c);});
+ const m=el('div','tbob');m.style.cssText='position:absolute;left:8%;bottom:0';
+ m.appendChild(sprite(MARIO.stand,MPAL,4));s.appendChild(m);
+ const sh=el('div','tbob');sh.style.cssText='position:absolute;right:10%;bottom:0;animation-delay:.2s';
+ sh.appendChild(sprite(SHROOM,SPAL,3));s.appendChild(sh);
+})();
+/* ============ 第2-4关 双队竞速共用 ============ */
+function duoBoard(st,target,barText){
+ st.classList.add('duo');
+ const halves={red:el('div','half hl'),blue:el('div','half hr')};
+ st.appendChild(halves.red);st.appendChild(halves.blue);
+ const sc={red:0,blue:0};
+ const tagR=el('div','pk-score red','🔴 红队 <span>0</span>');
+ const tagB=el('div','pk-score blue','<span>0</span> 蓝队 🔵');
+ st.appendChild(tagR);st.appendChild(tagB);
+ const bar=el('div','pkbar',barText||'');st.appendChild(bar);
+ let locked=false;
+ return {halves,bar,
+  setBar(html){bar.innerHTML=html;},
+  hit(team){sc[team]++;tagR.querySelector('span').textContent=sc.red;
+   tagB.querySelector('span').textContent=sc.blue;setProgress(sc[team],target);return sc[team];},
+  isWin(team){return sc[team]>=target;},
+  lock(v){locked=v;},locked(){return locked;},
+  win(team){runCleanups();pauseTimer();sWin();
+   recordResult({result:(team==='red'?'红队获胜':'蓝队获胜'),coins:S.coins,mistakes:S.mistakes,
+    elapsed:getElapsed(),score:sc.red+'-'+sc.blue});
+   showResult({title:(team==='red'?'🔴 红队':'🔵 蓝队')+'获胜！',sub:'两队同时闯关，比的就是又快又准！',
+    stats:[['红队得分',sc.red+' 分'],['蓝队得分',sc.blue+' 分'],['用时',fmt(getElapsed())]],
+    btns:[{t:'🔁 再来一局',primary:1,fn:()=>{hideOvl('ovl-result');startLevel(S.level);}},
+          {t:'🏠 返回选关',fn:goSelect}]});}};
+}
+const SENTENCES=[
+ {en:'I am a student.',zh:'我是一名学生。'},
+ {en:'This is my pencil.',zh:'这是我的铅笔。'},
+ {en:'I like my school.',zh:'我喜欢我的学校。'},
+ {en:'She is my friend.',zh:'她是我的朋友。'},
+ {en:'It is a green book.',zh:'它是一本绿色的书。'},
+ {en:'My father is tall.',zh:'我的爸爸很高。'},
+ {en:'What is your name?',zh:'你叫什么名字？'},
+ {en:'How are you?',zh:'你好吗？'},
+ {en:'I see ten desks.',zh:'我看见十张课桌。'},
+ {en:'He has two big eyes.',zh:'他有两只大眼睛。'},
+ {en:'Nice to meet you.',zh:'很高兴见到你。'},
+ {en:'This is my family.',zh:'这是我的家庭。'}];
+
+/* 第2关·双队拼写竞速 */
+L2.duo=function(){
+ const st=stage;
+ [['3%'],['94%']].forEach(p=>{const b=el('div','beam');b.style.left=p[0];st.appendChild(b);});
+ addGround(st);
+ const board=duoBoard(st,5,'意思：<b></b>　·　两队同时拼');
+ const H={};
+ ['red','blue'].forEach(team=>{
+  const half=board.halves[team];
+  const slots=el('div','slots'),brow=el('div','brow');
+  half.appendChild(slots);half.appendChild(brow);
+  const actor=marioActor(3);actor.el.style.left='8px';actor.set('stand',team==='red'?1:-1);
+  half.appendChild(actor.el);
+  H[team]={slots,brow,actor,prog:0,busy:false,word:''};
+ });
+ const pool=()=>{const P=activeBank();const p=P.filter(w=>w.en.length>=3&&w.en.length<=8&&!w.en.includes(' '));return p.length?p:P;};
+ function newWord(){
+  board.lock(false);
+  const item=rnd(pool()),word=item.en;
+  board.setBar('意思：'+zh(item.zh,item.en)+'　·　两队同时拼');sayPrompt(item.zh,item.en);
+  const distract=shuffle('abcdefghijklmnopqrstuvwxyz'.split('').filter(c=>!word.includes(c))).slice(0,3);
+  const letters=shuffle(word.split('').concat(distract));
+  ['red','blue'].forEach(team=>{
+   const h=H[team];h.prog=0;h.busy=false;h.word=word;
+   h.slots.innerHTML='';h.brow.innerHTML='';
+   word.split('').forEach(()=>h.slots.appendChild(el('span','slot','_')));
+   letters.forEach(ch=>{const b=el('div','qblock letter',ch);
+    b.addEventListener('click',()=>pick(team,ch,b));h.brow.appendChild(b);});
+   h.actor.el.classList.remove('slid2','hop');h.actor.el.style.left='8px';
+   h.actor.set('stand',team==='red'?1:-1);
+  });
+ }
+ function pick(team,ch,b){
+  if(board.locked()||H[team].busy||b.classList.contains('used'))return;
+  const h=H[team];
+  if(ch!==h.word[h.prog]){shake(b);sWrong();S.mistakes++;return;}
+  h.busy=true;
+  h.slots.children[h.prog].textContent=ch;h.slots.children[h.prog].classList.add('fill');
+  const dir=team==='red'?1:-1,act=h.actor;
+  act.el.classList.add('slid2');act.el.style.left=Math.max(2,b.offsetLeft+b.offsetWidth/2-18)+'px';
+  later(160,()=>{act.set('jump',dir);act.el.classList.add('hop');bump(b);
+   later(360,()=>{act.el.classList.remove('hop');act.set('stand',dir);sCoin();});});
+  b.classList.add('used');h.prog++;h.busy=false;
+  if(h.prog>=h.word.length){
+   speakWord(h.word);
+   board.lock(true);const sc=board.hit(team);addCoins(2);sWin();
+   banner((team==='red'?'红队':'蓝队')+' 先拼出 '+h.word+'！');
+   later(1300,()=>{if(board.isWin(team))board.win(team);else newWord();});
+  }
+ }
+ newWord();
+};
+
+/* 第3关·双队连词竞速（去掉蘑菇，排错清空重来） */
+L3.duo=function(){
+ const st=stage;
+ addSky(st);addGround(st);
+ const board=duoBoard(st,3,'用英语说：<b></b>　·　两队同时排');
+ const H={};
+ ['red','blue'].forEach(team=>{
+  const half=board.halves[team];
+  const chips=el('div','chips'),tiles=el('div','tiles'),row=el('div','minirow');
+  const undo=el('button','btn mini','↩ 撤回'),re=el('button','btn mini','🔀 重排');
+  row.appendChild(undo);row.appendChild(re);
+  half.appendChild(chips);half.appendChild(tiles);half.appendChild(row);
+  half.appendChild(el('div','pk-hint',team==='red'?'🔴 红队':'🔵 蓝队'));
+  const actor=marioActor(3);actor.el.style.left='8px';actor.set('stand',team==='red'?1:-1);
+  half.appendChild(actor.el);
+  H[team]={chips,tiles,actor,answer:[],tileEls:[],busy:false,target:[]};
+  undo.addEventListener('click',()=>undoFn(team));
+  re.addEventListener('click',()=>reFn(team));
+ });
+ let last=null;
+ function newSent(){
+  board.lock(false);
+  let s;do{s=rnd(SENTENCES);}while(last&&s.en===last.en);last=s;
+  board.setBar('用英语说：'+zh(s.zh,s.en)+'　·　两队同时排');sayPrompt(s.zh,s.en);
+  const m=s.en.match(/^(.+?)([.?!])$/);
+  const words=m[1].trim().split(/\s+/),punct=m[2];
+  const target=words.concat([punct]);
+  ['red','blue'].forEach(team=>{
+   const h=H[team];h.answer=[];h.tileEls=[];h.busy=false;h.target=target;
+   h.chips.innerHTML='';h.tiles.innerHTML='';
+   h.actor.el.classList.remove('slid','hop');h.actor.el.style.left='8px';
+   h.actor.set('stand',team==='red'?1:-1);
+   shuffle(target).forEach(t=>{const e=el('div','tile',t);
+    e.addEventListener('click',()=>pick(team,t,e));h.tiles.appendChild(e);h.tileEls.push({t,e});});
+  });
+ }
+ function renderChips(team){const h=H[team];h.chips.innerHTML='';h.answer.forEach(x=>{
+  const c=el('div','chip',x.t);if(/^[.?!]$/.test(x.t))c.classList.add('punc');h.chips.appendChild(c);});}
+ function pick(team,t,e){
+  if(board.locked()||H[team].busy||e.classList.contains('off'))return;
+  speakWord(t);
+  const h=H[team];e.classList.add('off');h.answer.push({t,e});renderChips(team);sPop();
+  if(h.answer.length===h.target.length)check(team);
+ }
+ function check(team){
+  const h=H[team];h.busy=true;
+  if(h.answer.every((x,i)=>x.t===h.target[i])){
+   board.lock(true);const sc=board.hit(team);addCoins(2);sStomp();sWin();
+   const dir=team==='red'?1:-1,act=h.actor;
+   act.el.classList.add('slid');act.el.style.left=(h.chips.offsetLeft+h.chips.offsetWidth/2-18)+'px';
+   later(320,()=>{act.set('jump',dir);act.el.classList.add('hop');});
+   banner((team==='red'?'红队':'蓝队')+' 排对啦！');
+   later(1300,()=>{if(board.isWin(team))board.win(team);else newSent();});
+  }else{S.mistakes++;sWrong();shake(h.actor.el);
+   h.answer.forEach(x=>x.e.classList.remove('off'));h.answer=[];renderChips(team);h.busy=false;
+   toast('排错了，重新来！');}
+ }
+ function undoFn(team){if(board.locked()||H[team].busy||!H[team].answer.length)return;
+  const x=H[team].answer.pop();x.e.classList.remove('off');renderChips(team);sPop();}
+ function reFn(team){if(board.locked()||H[team].busy)return;const h=H[team];
+  shuffle(h.tileEls.filter(x=>!x.e.classList.contains('off'))).forEach(x=>h.tiles.appendChild(x.e));sPop();}
+ newSent();
+};
+
+/* 第4关·双队配对竞速 */
+L4.duo=function(){
+ const st=stage;
+ addSky(st);addGround(st);
+ const board=duoBoard(st,2,'先配完 4 对的一方赢下这轮 · 先赢 2 轮获胜');
+ const H={};
+ ['red','blue'].forEach(team=>{
+  const half=board.halves[team];
+  const actor=marioActor(3);actor.el.style.left='8px';actor.set('stand',team==='red'?1:-1);
+  half.appendChild(actor.el);
+  H[team]={pipes:[],flowers:[],actor,sel:null,busy:false,pairs:0};
+ });
+ let used=[];
+ function sample4(){const rest=activeBank().filter(w=>!used.some(x=>x.en===w.en));
+  const p=rest.length>=4?rest:(activeBank().length>=4?activeBank():BANK.items);const pick=shuffle(p).slice(0,4);
+  used=pick.map(w=>w.en);return pick;}
+ function newRound(){
+  board.lock(false);
+  const ws=sample4(),xs=[6,30,54,78];
+  ['red','blue'].forEach(team=>{
+   const h=H[team],half=board.halves[team];
+   h.pipes.forEach(p=>p.el.remove());h.flowers.forEach(f=>f.el.remove());
+   h.pipes=[];h.flowers=[];h.sel=null;h.busy=false;h.pairs=0;
+   h.actor.el.classList.remove('slid','sink');h.actor.el.style.left='8px';
+   h.actor.set('stand',team==='red'?1:-1);
+   ws.forEach((w,i)=>{const p=el('div','pipeh','<div class="pbody"></div><div class="plip"></div>');
+    const plate=el('div','plate');plate.textContent=w.en;p.appendChild(plate);
+    p.style.left='calc('+xs[i]+'% - 31px)';
+    p.addEventListener('click',()=>pickPipe(team,w,p));half.appendChild(p);h.pipes.push({w,el:p});});
+   shuffle(ws).forEach((w,i)=>{const f=el('div','flspot');
+    const zh=el('div','zh');zh.textContent=w.zh;
+    f.appendChild(zh);f.appendChild(el('div','bud'));f.appendChild(el('div','pot'));
+    f.style.left=(xs[i]+3)+'%';
+    f.addEventListener('click',()=>pickFlower(team,w,f));half.appendChild(f);h.flowers.push({w,el:f});});
+  });
+ }
+ function pickPipe(team,w,p){
+  const h=H[team];if(board.locked()||h.busy||p.classList.contains('done'))return;
+  speakWord(w.en);
+  h.pipes.forEach(x=>x.el.classList.remove('sel'));p.classList.add('sel');h.sel={w,p};sPop();
+  h.actor.el.classList.add('slid');h.actor.el.style.left=(p.offsetLeft+p.offsetWidth/2-18)+'px';
+ }
+ function pickFlower(team,w,f){
+  const h=H[team];if(board.locked()||h.busy||f.classList.contains('done'))return;
+  if(!h.sel){toast('先点英文水管哦！');shake(f);return;}
+  if(w.en===h.sel.w.en){
+   h.busy=true;h.pairs++;sPipe();
+   f.classList.add('done');const bud=f.querySelector('.bud');
+   if(bud){const fc=sprite(FLOWER,FPAL,2);fc.classList.add('bloomanim');bud.replaceWith(fc);}
+   const pipe=h.sel.p,act=h.actor;
+   act.el.classList.add('sink');
+   later(460,()=>{act.el.classList.remove('sink');act.el.style.left='8px';act.set('stand',team==='red'?1:-1);});
+   pipe.classList.remove('sel');pipe.classList.add('done');
+   spawnCoin(f);sCoin();addCoins(1);h.sel=null;h.busy=false;
+   if(h.pairs>=4){
+    board.lock(true);const sc=board.hit(team);sWin();
+    banner((team==='red'?'红队':'蓝队')+' 配完一轮！');
+    later(1300,()=>{if(board.isWin(team))board.win(team);else newRound();});
+   }
+  }else{shake(f);sWrong();S.mistakes++;toast('不匹配，再想想！');}
+ }
+ newRound();
+};
+
+$('#hud-coin-ic').appendChild(sprite(COIN,CPAL,2));
+updateBankStatus();
+</script>
+</body>
+</html>
