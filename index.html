@@ -1164,13 +1164,25 @@ const DEFAULT_BANK={name:"冀教版三起·2026新版（3-6年级全册）",item
 {en:"hear",zh:"听见",b:"6下",u:4}
 ]};
 
+function migrateBank(o){/* 老版本存档的词没有册别/单元标签，会让范围筛选失效：按词名从默认词库补标（重复词取最早册次） */
+ const map={};(DEFAULT_BANK.items||[]).forEach(it=>{const k=String(it.en).toLowerCase();
+  if(!map[k])map[k]=it;});
+ let fixed=0;
+ (o.items||[]).forEach(it=>{
+  if(!it.b||!it.u){const d=map[String(it.en).toLowerCase()];
+   if(d){it.b=d.b;it.u=d.u;fixed++;}}});
+ o.untagged=(o.items||[]).filter(it=>!it.b||!it.u).length;
+ if(fixed){try{localStorage.setItem('marioWordBank_v1',JSON.stringify(o));}catch(e){}}
+ return o;}
 function loadBank(){try{const s=localStorage.getItem('marioWordBank_v1');
- if(s){const o=JSON.parse(s);if(o&&o.items&&o.items.length>=8)return o;}}catch(e){}
+ if(s){const o=JSON.parse(s);if(o&&o.items&&o.items.length>=8)return migrateBank(o);}}catch(e){}
  return JSON.parse(JSON.stringify(DEFAULT_BANK));}
 let BANK=loadBank();
-function saveBank(b){BANK=b;try{localStorage.setItem('marioWordBank_v1',JSON.stringify(b));}catch(e){}updateBankStatus();}
+function saveBank(b){BANK=migrateBank(b);try{localStorage.setItem('marioWordBank_v1',JSON.stringify(BANK));}catch(e){}updateBankStatus();}
 function updateBankStatus(){const n=activeBank().length;
- $('#bank-status').textContent='当前词库：'+BANK.name+'（共 '+BANK.items.length+' 词，本次范围 '+n+' 词）';
+ const un=(BANK.untagged||BANK.items.filter(it=>!it.b||!it.u).length)||0;
+ const unNote=(un&&!SCOPE.words.length)?'，另有 '+un+' 个词无册别标记、不受范围限制':'';
+ $('#bank-status').textContent='当前词库：'+BANK.name+'（共 '+BANK.items.length+' 词，本次范围 '+n+' 词'+unNote+'）';
  $('#sel-bank').textContent='词库：'+BANK.name+' · 本次 '+n+'/'+BANK.items.length+' 词（标题页可改范围）';
  const ss=$('#scope-status');if(ss)ss.textContent=scopeLabel();}
 
@@ -1186,10 +1198,16 @@ function saveScope(){try{localStorage.setItem('marioScope_v1',JSON.stringify({
  books:[...SCOPE.books],units:SCOPE.units?[...SCOPE.units]:[],words:SCOPE.words}));}catch(e){}
  renderScope();updateBankStatus();}
 function activeBank(){const all=BANK.items||[];
- let out=all.filter(it=>{
-  if(SCOPE.words.length)return SCOPE.words.some(w=>w.toLowerCase()===String(it.en).toLowerCase());
-  if(!it.b||!it.u)return true;
-  return SCOPE.books.has(it.b)&&(!SCOPE.units||SCOPE.units.has(it.u));});
+ if(SCOPE.words.length)return all.filter(it=>SCOPE.words.some(w=>w.toLowerCase()===String(it.en).toLowerCase()));
+ if(SCOPE.books.size===BOOK_LIST.length&&!SCOPE.units)return all;
+ /* 词名→默认词库全部出处：只给没标签的词兜底（有标签的词只认自己的标签，防止跨册同名词混池） */
+ const occMap={};(DEFAULT_BANK.items||[]).forEach(it=>{const k=String(it.en).toLowerCase();
+  (occMap[k]=occMap[k]||[]).push(it);});
+ const out=all.filter(it=>{
+  if(it.b&&it.u)return SCOPE.books.has(it.b)&&(!SCOPE.units||SCOPE.units.has(it.u));
+  const occ=occMap[String(it.en).toLowerCase()];
+  if(!occ)return true;/* 词库里无从判断出处，放行 */
+  return occ.some(o=>SCOPE.books.has(o.b)&&(!SCOPE.units||SCOPE.units.has(o.u)));});
  return out.length>=2?out:all;}
 function scopeLabel(){const bs=SCOPE.books.size===BOOK_LIST.length?'全部八册':(!SCOPE.books.size?'未选册别':[...SCOPE.books].sort().join('、'));
  const us=!SCOPE.units?'全部单元':'第'+[...SCOPE.units].sort((a,b)=>a-b).join('、')+'单元';
@@ -1198,7 +1216,9 @@ function renderScope(){
  const bc=$('#scope-books'),uc=$('#scope-units');if(!bc||!uc)return;
  bc.innerHTML=BOOK_LIST.map(b=>'<button class="chip'+(SCOPE.books.has(b)?' on':'')+'" data-b="'+b+'">'+b+'</button>').join('');
  bc.querySelectorAll('.chip').forEach(x=>x.addEventListener('click',()=>{
-  const b=x.dataset.b;if(SCOPE.books.has(b))SCOPE.books.delete(b);else SCOPE.books.add(b);saveScope();}));
+  const b=x.dataset.b;if(SCOPE.books.has(b))SCOPE.books.delete(b);else SCOPE.books.add(b);
+  if(SCOPE.words.length){SCOPE.words=[];toast('已取消自定义词范围，改用册别/单元筛选');}
+  saveScope();}));
  uc.innerHTML='<button class="chip'+(!SCOPE.units?' on':'')+'" data-u="all">全部</button>'+
   UNIT_LIST.map(u=>'<button class="chip'+(SCOPE.units&&SCOPE.units.has(u)?' on':'')+'" data-u="'+u+'">'+u+'</button>').join('');
  uc.querySelectorAll('.chip').forEach(x=>x.addEventListener('click',()=>{
@@ -1206,6 +1226,7 @@ function renderScope(){
   else{const u=parseInt(x.dataset.u,10);if(!SCOPE.units)SCOPE.units=new Set();
    if(SCOPE.units.has(u))SCOPE.units.delete(u);else SCOPE.units.add(u);
    if(!SCOPE.units.size)SCOPE.units=null;}
+  if(SCOPE.words.length){SCOPE.words=[];toast('已取消自定义词范围，改用册别/单元筛选');}
   saveScope();}));
 }
 
