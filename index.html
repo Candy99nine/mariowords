@@ -8,12 +8,15 @@
 :root{--ink:#1c1c1c;--sky:#5c94fc;--gold:#ffd94a;--cream:#fff6df}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-user-select:none;user-select:none}
 html,body{min-height:100%}
-body{background:#101010;font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);overflow-x:hidden}
+body{background:var(--sky);font-family:"PingFang SC","Microsoft YaHei","Segoe UI",sans-serif;color:var(--ink);overflow-x:hidden}
 button{font-family:inherit;touch-action:manipulation}
 canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 
 .screen{display:none;min-height:100vh;align-items:center;justify-content:center;padding:16px}
 .screen.active{display:flex}
+/* 游戏页铺满整屏：黑边去掉，整窗按屏幕等比放大 */
+#scr-game{padding:0;overflow:hidden;background:linear-gradient(var(--sky) 0 88%,#c1703a 88% 100%)}
+#gamewin{width:1120px;max-width:none;transform-origin:center center;will-change:transform}
 
 /* ===== 通用按钮 ===== */
 .btn{font-weight:800;font-size:16px;border:3px solid var(--ink);background:var(--gold);color:var(--ink);
@@ -72,24 +75,23 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .topbar{display:flex;align-items:center;gap:10px;background:var(--cream);border:4px solid var(--ink);
  border-bottom:none;border-radius:12px 12px 0 0;padding:8px 12px;font-weight:800;flex-wrap:wrap}
 .tb-left{display:flex;align-items:center;gap:10px;min-width:0}
-.tb-title{font-size:16px;white-space:nowrap}
-#hud-lv{font-size:13px;color:#a05a00;white-space:nowrap}
+.tb-title{font-size:19px;white-space:nowrap}
+#hud-lv{font-size:15px;color:#a05a00;white-space:nowrap}
 .tb-mid{display:flex;align-items:center;gap:8px;flex:1;min-width:160px}
 .tb-mid .sep{width:2px;height:16px;background:#00000022}
 .hudcoin canvas{vertical-align:middle}
-#hud-coins{font-size:16px;min-width:26px}
+#hud-coins{font-size:19px;min-width:30px}
 #hud-coins.bumpc{animation:chipin .3s}
 .pbar{flex:1;height:12px;background:#d9cfb8;border:2px solid var(--ink);border-radius:6px;overflow:hidden;max-width:220px}
 .pbar i{display:block;height:100%;background:linear-gradient(#ffe98a,#ffb62e);width:0;transition:width .3s}
 .tb-right{display:flex;align-items:center;gap:8px}
-#hud-time{font-size:15px;font-variant-numeric:tabular-nums}
+#hud-time{font-size:18px;font-variant-numeric:tabular-nums}
 .stage{position:relative;height:560px;background:var(--sky);border:4px solid var(--ink);overflow:hidden}
-@media(max-height:740px){.stage{height:470px}}
 .stage.lv2{background:#463019}
 .stage.quake{animation:quake .4s}
 @keyframes quake{0%,100%{transform:translate(0)}20%{transform:translate(-7px,2px)}40%{transform:translate(6px,-3px)}60%{transform:translate(-5px,1px)}80%{transform:translate(4px,-1px)}}
 .hintbar{background:var(--cream);border:4px solid var(--ink);border-top:none;border-radius:0 0 12px 12px;
- padding:8px 14px;font-size:14px;font-weight:700;color:#6b5b3e}
+ padding:10px 16px;font-size:17px;font-weight:700;color:#6b5b3e}
 /* 暂停时冻结场景内所有 CSS 动画（跳/砖/金币/花/云等） */
 .stage.f-anim *,.stage.f-anim{animation-play-state:paused!important}
 
@@ -110,20 +112,20 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .beam{position:absolute;top:0;bottom:64px;width:26px;border:3px solid #2e1c0a;z-index:1;
  background:repeating-linear-gradient(#8a5a2b 0 12px,#6e4520 12px 24px)}
 .lvtag{position:absolute;top:10px;left:10px;background:rgba(255,255,255,.88);border:2px solid var(--ink);
- border-radius:6px;padding:4px 8px;font-size:12px;font-weight:800;z-index:6}
+ border-radius:6px;padding:5px 10px;font-size:15px;font-weight:800;z-index:6}
 
 .sign{position:absolute;left:50%;transform:translateX(-50%);top:14px;background:#e7c989;border:3px solid var(--ink);
- border-radius:8px;padding:8px 18px;font-weight:800;font-size:18px;box-shadow:0 4px 0 rgba(0,0,0,.25);z-index:5;
+ border-radius:8px;padding:10px 22px;font-weight:800;font-size:23px;box-shadow:0 4px 0 rgba(0,0,0,.25);z-index:5;
  max-width:80%;text-align:center}
-.sign.big{font-size:22px}
+.sign.big{font-size:28px}
 .sign b{color:#c2570a}
 
 /* 问号砖 */
-.qblock{position:absolute;min-width:56px;height:56px;background:#f7a41d;border:3px solid #6b3a12;cursor:pointer;
+.qblock{position:absolute;min-width:68px;height:68px;background:#f7a41d;border:3px solid #6b3a12;cursor:pointer;
  box-shadow:inset 3px 3px 0 #ffd166,inset -3px -3px 0 #cf7d00;display:flex;align-items:center;justify-content:center;
- font-weight:900;font-size:24px;color:#6b3a12;z-index:5}
-.qblock .w{font-size:13px;line-height:1.15;color:#4a2a05;text-align:center;word-break:break-word;padding:2px}
-.qblock.letter{width:56px}
+ font-weight:900;font-size:30px;color:#6b3a12;z-index:5}
+.qblock .w{font-size:17px;line-height:1.15;color:#4a2a05;text-align:center;word-break:break-word;padding:2px}
+.qblock.letter{width:68px}
 .qblock:hover{filter:brightness(1.06)}
 .qblock.bump{animation:bump .32s}
 @keyframes bump{0%{margin-top:0}40%{margin-top:-16px}100%{margin-top:0}}
@@ -150,26 +152,26 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 @keyframes puffa{0%{transform:scale(.3);opacity:.95}100%{transform:scale(2);opacity:0}}
 
 .banner{position:absolute;top:38%;left:50%;transform:translate(-50%,-50%);background:var(--gold);border:4px solid var(--ink);
- padding:12px 28px;font-size:24px;font-weight:900;border-radius:12px;z-index:25;box-shadow:0 6px 0 rgba(0,0,0,.3);animation:chipin .3s}
+ padding:14px 32px;font-size:30px;font-weight:900;border-radius:12px;z-index:25;box-shadow:0 6px 0 rgba(0,0,0,.3);animation:chipin .3s}
 .toast{position:absolute;top:42%;left:50%;transform:translate(-50%,-50%);background:rgba(20,20,20,.88);color:#fff;
- padding:10px 18px;border-radius:10px;font-weight:800;z-index:30;animation:chipin .25s;white-space:nowrap}
+ padding:12px 22px;border-radius:10px;font-size:22px;font-weight:800;z-index:30;animation:chipin .25s;white-space:nowrap}
 @keyframes chipin{from{transform:translate(var(--tx,0),var(--ty,0)) scale(.5);opacity:.4}to{opacity:1}}
 .banner,.toast{--tx:-50%;--ty:-50%}
 .lvlintro{position:absolute;inset:0;display:flex;flex-direction:column;gap:8px;align-items:center;justify-content:center;
  background:rgba(0,0,0,.38);z-index:40;pointer-events:none;animation:chipin .25s}
-.lvlintro b{font-size:36px;color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.6);letter-spacing:4px}
-.lvlintro span{color:#fff;font-weight:800;font-size:16px}
+.lvlintro b{font-size:44px;color:var(--gold);text-shadow:3px 3px 0 rgba(0,0,0,.6);letter-spacing:4px}
+.lvlintro span{color:#fff;font-weight:800;font-size:20px}
 
 /* 触屏按键 */
 .touchctl{position:absolute;right:10px;bottom:76px;display:flex;gap:8px;z-index:9}
-.touchctl button{width:52px;height:52px;font-size:20px;font-weight:900;border:3px solid var(--ink);
+.touchctl button{width:60px;height:60px;font-size:24px;font-weight:900;border:3px solid var(--ink);
  background:rgba(255,255,255,.85);border-radius:12px;box-shadow:0 3px 0 var(--ink);cursor:pointer}
 .touchctl button:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 
 /* 第1关 双队 */
 .divider{position:absolute;top:0;bottom:0;left:50%;width:0;border-left:4px dashed rgba(255,255,255,.65);z-index:2}
-.teamtag{position:absolute;top:12px;background:#fff;border:3px solid var(--ink);border-radius:8px;padding:6px 12px;
- font-weight:900;font-size:16px;z-index:7;display:flex;align-items:center;gap:6px}
+.teamtag{position:absolute;top:12px;background:#fff;border:3px solid var(--ink);border-radius:8px;padding:8px 15px;
+ font-weight:900;font-size:20px;z-index:7;display:flex;align-items:center;gap:6px}
 .teamtag.red{left:12px;color:#c62828}
 .teamtag.blue{right:12px;color:#2a5fd0}
 .teamtag .sc{background:var(--gold);border:2px solid var(--ink);border-radius:6px;padding:0 8px;color:var(--ink)}
@@ -180,54 +182,54 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .half.hl{left:0}.half.hr{right:0}
 .half.hr{border-left:4px dashed rgba(255,255,255,.65)}
 .pkbar{position:absolute;top:52px;left:50%;transform:translateX(-50%);background:rgba(255,255,255,.92);
- border:3px solid var(--ink);border-radius:8px;padding:6px 14px;font-weight:900;font-size:15px;
+ border:3px solid var(--ink);border-radius:8px;padding:8px 16px;font-weight:900;font-size:19px;
  z-index:7;white-space:nowrap;text-align:center}
 .pkbar b{color:#c2570a}
 .pk-score{position:absolute;top:12px;z-index:7;background:var(--gold);border:3px solid var(--ink);
- border-radius:8px;padding:4px 10px;font-weight:900;font-size:15px}
+ border-radius:8px;padding:6px 12px;font-weight:900;font-size:19px}
 .pk-score.red{left:12px;color:#c62828}.pk-score.blue{right:12px;color:#2a5fd0}
-.pk-half-tag{position:absolute;top:12px;font-size:13px;font-weight:900;color:#fff;background:rgba(0,0,0,.4);
+.pk-half-tag{position:absolute;top:12px;font-size:16px;font-weight:900;color:#fff;background:rgba(0,0,0,.4);
  border-radius:6px;padding:2px 8px;z-index:6}
 /* 第2关双队：字母砖与拼写槽缩进半区 */
-.stage.duo .sign{top:10px;font-size:18px;max-width:60%}
+.stage.duo .sign{top:10px;font-size:22px;max-width:60%}
 .half .brow{top:120px;gap:7px;padding:0 8px}
-.half .brow .qblock{width:40px;min-width:40px;height:44px}
-.half .brow .qblock .w{font-size:13px}
-.half .slots{top:210px;gap:5px}
-.half .slot{width:26px;height:36px;font-size:20px}
+.half .brow .qblock{width:52px;min-width:52px;height:56px}
+.half .brow .qblock .w{font-size:16px}
+.half .slots{top:214px;gap:5px}
+.half .slot{width:34px;height:46px;font-size:25px}
 /* 第3关双队：词块/答案条缩进半区，去掉蘑菇轨道 */
 .half .chips{top:104px;max-width:90%;gap:4px}
-.half .chip{font-size:14px;padding:5px 8px}
-.half .tiles{top:170px;max-width:92%;gap:6px}
-.half .tile{font-size:14px;padding:6px 9px}
+.half .chip{font-size:17px;padding:6px 9px}
+.half .tiles{top:174px;max-width:92%;gap:6px}
+.half .tile{font-size:17px;padding:7px 10px}
 .half .minirow{top:250px;gap:6px}
 .half .pk-hint{position:absolute;top:290px;left:0;right:0;text-align:center;color:#fff;
- font-weight:800;font-size:13px;text-shadow:1px 1px 2px #000}
+ font-weight:800;font-size:16px;text-shadow:1px 1px 2px #000}
 /* 第4关双队：水管与花盆按半区 40% 宽度排布 */
-.half .pipeh{width:62px;top:100px}
-.half .pipeh .plip{height:24px}
-.half .pipeh .plate{font-size:11px;padding:2px 5px;max-width:58px}
-.half .flspot{width:62px;margin-left:-31px;bottom:64px}
-.half .flspot .zh{font-size:11px;padding:3px 5px;max-width:60px;overflow:hidden;text-overflow:ellipsis}
-.half .flspot .pot{width:32px;height:22px}
+.half .pipeh{width:76px;top:100px;height:148px}
+.half .pipeh .plip{height:28px}
+.half .pipeh .plate{font-size:15px;padding:3px 7px;max-width:74px;top:46px}
+.half .flspot{width:76px;margin-left:-38px;bottom:64px}
+.half .flspot .zh{font-size:15px;padding:4px 7px;max-width:74px;overflow:hidden;text-overflow:ellipsis}
+.half .flspot .pot{width:42px;height:28px}
 
 /* 第2关 */
 .brow{position:absolute;top:108px;left:0;right:0;display:flex;flex-wrap:wrap;gap:10px;justify-content:center;padding:0 12px;z-index:5}
 .brow .qblock{position:relative}
 .slots{position:absolute;top:250px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
-.slot{width:34px;height:46px;border-bottom:4px solid var(--ink);background:rgba(255,255,255,.1);
- display:flex;align-items:center;justify-content:center;font-size:26px;font-weight:900;color:#ffe27a}
+.slot{width:42px;height:56px;border-bottom:4px solid var(--ink);background:rgba(255,255,255,.1);
+ display:flex;align-items:center;justify-content:center;font-size:31px;font-weight:900;color:#ffe27a}
 .slot.fill{background:rgba(255,217,74,.28);animation:chipin .25s}
 
 /* 第3关 */
 .chips{position:absolute;top:96px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:6px;
  justify-content:center;min-height:42px;max-width:92%;z-index:5}
-.chip{background:var(--gold);border:3px solid var(--ink);border-radius:8px;padding:6px 12px;font-weight:900;font-size:17px;animation:chipin .18s}
+.chip{background:var(--gold);border:3px solid var(--ink);border-radius:8px;padding:8px 15px;font-weight:900;font-size:21px;animation:chipin .18s}
 .chip.punc{margin-left:-12px}
 .tiles{position:absolute;top:168px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:8px;
  justify-content:center;max-width:92%;z-index:5}
-.tile{background:#fff8e6;border:3px solid var(--ink);border-radius:8px;padding:7px 12px;font-weight:800;
- font-size:17px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
+.tile{background:#fff8e6;border:3px solid var(--ink);border-radius:8px;padding:9px 15px;font-weight:800;
+ font-size:21px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
 .tile:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
 .tile.off{visibility:hidden}
 .tile.hint{animation:hintp .5s 3;border-color:#e73c2e;background:#ffecec}
@@ -235,26 +237,26 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .minirow{position:absolute;top:236px;left:50%;transform:translateX(-50%);display:flex;gap:8px;z-index:5}
 .track{position:absolute;left:150px;right:150px;bottom:66px;height:26px;display:flex;z-index:4}
 .trackcell{flex:1;background:#e7c989;border:2px solid #7a4a12;display:flex;align-items:center;justify-content:center;
- font-weight:900;color:#7a4a12;font-size:14px}
+ font-weight:900;color:#7a4a12;font-size:17px}
 .dist{position:absolute;bottom:152px;width:130px;margin-left:-65px;text-align:center;background:#ffe08a;
- border:2px solid var(--ink);border-radius:6px;padding:3px 4px;font-weight:800;font-size:13px;z-index:7;
+ border:2px solid var(--ink);border-radius:6px;padding:5px 7px;font-weight:800;font-size:16px;z-index:7;
  transition:left .45s ease;white-space:nowrap}
 
 /* 第4关 */
-.pipeh{position:absolute;top:-6px;width:86px;height:134px;z-index:3;cursor:pointer}
-.pipeh .pbody{position:absolute;top:0;bottom:28px;left:8px;right:8px;background:#3ea23e;border:3px solid #14532d}
-.pipeh .plip{position:absolute;bottom:0;left:0;right:0;height:30px;background:#3ea23e;border:3px solid #14532d;border-radius:4px}
-.pipeh .plate{position:absolute;top:46px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid var(--ink);
- padding:3px 9px;font-weight:900;font-size:14px;border-radius:6px;white-space:nowrap;z-index:4;max-width:120px;overflow:hidden;text-overflow:ellipsis}
+.pipeh{position:absolute;top:-6px;width:106px;height:162px;z-index:3;cursor:pointer}
+.pipeh .pbody{position:absolute;top:0;bottom:32px;left:8px;right:8px;background:#3ea23e;border:3px solid #14532d}
+.pipeh .plip{position:absolute;bottom:0;left:0;right:0;height:34px;background:#3ea23e;border:3px solid #14532d;border-radius:4px}
+.pipeh .plate{position:absolute;top:52px;left:50%;transform:translateX(-50%);background:#fff;border:3px solid var(--ink);
+ padding:5px 12px;font-weight:900;font-size:19px;border-radius:6px;white-space:nowrap;z-index:4;max-width:150px;overflow:hidden;text-overflow:ellipsis}
 .pipeh:hover{filter:brightness(1.08)}
 .pipeh.sel{filter:brightness(1.15)}
 .pipeh.sel .plate{background:var(--gold)}
 .pipeh.done{opacity:.55;cursor:default}
-.flspot{position:absolute;bottom:64px;width:86px;margin-left:-43px;text-align:center;cursor:pointer;z-index:5}
-.flspot .zh{display:inline-block;background:#fff;border:3px solid var(--ink);border-radius:8px;padding:4px 8px;
- font-weight:800;font-size:14px;margin-bottom:4px}
-.flspot .bud{width:14px;height:18px;background:#2f9e44;margin:0 auto 2px;border-radius:8px 8px 3px 3px}
-.flspot .pot{width:42px;height:26px;margin:0 auto;background:#b55f2e;border:3px solid var(--ink);
+.flspot{position:absolute;bottom:64px;width:106px;margin-left:-53px;text-align:center;cursor:pointer;z-index:5}
+.flspot .zh{display:inline-block;background:#fff;border:3px solid var(--ink);border-radius:8px;padding:6px 11px;
+ font-weight:800;font-size:19px;margin-bottom:5px}
+.flspot .bud{width:18px;height:22px;background:#2f9e44;margin:0 auto 3px;border-radius:8px 8px 3px 3px}
+.flspot .pot{width:54px;height:34px;margin:0 auto;background:#b55f2e;border:3px solid var(--ink);
  clip-path:polygon(8% 0,92% 0,76% 100%,24% 100%)}
 .flspot:hover .zh{background:#fff3c9}
 .flspot.done{cursor:default}
@@ -377,7 +379,7 @@ s.parentNode.insertBefore(hm, s);
 
 <!-- 游戏页 -->
 <section id="scr-game" class="screen">
-  <div class="gamewin">
+  <div class="gamewin" id="gamewin">
     <div class="topbar">
       <div class="tb-left"><span class="tb-title">🍄 单词大冒险</span><span id="hud-lv"></span></div>
       <div class="tb-mid">
@@ -1440,7 +1442,14 @@ function marioActor(sc){const wrap=el('div','mario');
  return {el:wrap,set};}
 
 /* ============ 页面切换 ============ */
-function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');}
+/* 整窗等比放大铺满屏幕：去掉黑边，砖块/水管/字一起变大 */
+function fitGame(){const win=document.getElementById('gamewin');if(!win)return;
+ const w=win.offsetWidth||1120,h=win.offsetHeight||665;
+ const s=Math.min(window.innerWidth/w,window.innerHeight/h);
+ win.style.transform='scale('+Math.max(0.32,Math.min(s,2.6)).toFixed(3)+')';}
+window.addEventListener('resize',()=>{if(document.getElementById('scr-game').classList.contains('active'))fitGame();});
+function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');
+ if(id==='#scr-game'){fitGame();setTimeout(fitGame,90);}}
 function hideOvl(id){const e=document.getElementById(id);if(e)e.classList.remove('show');}
 function goSelect(){runCleanups();paused=false;['ovl-pause','ovl-result','modal-bank','modal-help'].forEach(hideOvl);
  pauseTimer();enterSelect();show('#scr-select');}
@@ -1808,7 +1817,7 @@ const L4={start:function(){
   ws.forEach((w,i)=>{
    const p=el('div','pipeh','<div class="pbody"></div><div class="plip"></div>');
    const plate=el('div','plate');plate.textContent=w.en;p.appendChild(plate);
-   p.style.left='calc('+xs[i]+'% - 43px)';
+   p.style.left='calc('+xs[i]+'% - 53px)';
    p.addEventListener('click',()=>pickPipe(w,p));
    st.appendChild(p);pipes.push({w,el:p});});
   shuffle(ws).forEach((w,i)=>{
@@ -2120,7 +2129,7 @@ L4.duo=function(){
    h.actor.set('stand',team==='red'?1:-1);
    ws.forEach((w,i)=>{const p=el('div','pipeh','<div class="pbody"></div><div class="plip"></div>');
     const plate=el('div','plate');plate.textContent=w.en;p.appendChild(plate);
-    p.style.left='calc('+xs[i]+'% - 31px)';
+    p.style.left='calc('+xs[i]+'% - 38px)';
     p.addEventListener('click',()=>pickPipe(team,w,p));half.appendChild(p);h.pipes.push({w,el:p});});
    shuffle(ws).forEach((w,i)=>{const f=el('div','flspot');
     const zh=el('div','zh');zh.textContent=w.zh;
