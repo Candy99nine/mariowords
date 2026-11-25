@@ -51,7 +51,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 /* ===== 选关页 ===== */
 #scr-select{background:linear-gradient(var(--sky) 0 100%)}
 .panel{background:var(--cream);border:4px solid var(--ink);border-radius:12px;box-shadow:0 8px 0 rgba(0,0,0,.4);padding:20px 22px}
-.selpanel{width:min(720px,96vw)}
+.selpanel{width:min(720px,96vw);transform-origin:center center}
 .selhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .selhead h2{font-size:22px;flex:1}
 .modepill{background:var(--gold);border:3px solid var(--ink);border-radius:20px;padding:4px 12px;font-size:13px;font-weight:800}
@@ -198,12 +198,12 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .half .slots{top:214px;gap:5px}
 .half .slot{width:34px;height:46px;font-size:25px}
 /* 第3关双队：词块/答案条缩进半区，去掉蘑菇轨道 */
-.half .chips{top:104px;max-width:90%;gap:4px}
+.half .chips{top:104px;gap:4px;left:6px;right:6px}
 .half .chip{font-size:17px;padding:6px 9px}
-.half .tiles{top:174px;max-width:92%;gap:6px}
+.half .tiles{top:174px;gap:6px;left:6px;right:6px}
 .half .tile{font-size:17px;padding:7px 10px}
-.half .minirow{top:250px;gap:6px}
-.half .pk-hint{position:absolute;top:290px;left:0;right:0;text-align:center;color:#fff;
+.half .minirow{top:262px;gap:6px}
+.half .pk-hint{position:absolute;top:302px;left:0;right:0;text-align:center;color:#fff;
  font-weight:800;font-size:16px;text-shadow:1px 1px 2px #000}
 /* 第4关双队：水管与花盆按半区 40% 宽度排布 */
 .half .pipeh{width:76px;top:100px;height:148px}
@@ -222,12 +222,12 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .slot.fill{background:rgba(255,217,74,.28);animation:chipin .25s}
 
 /* 第3关 */
-.chips{position:absolute;top:96px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:6px;
- justify-content:center;min-height:42px;max-width:92%;z-index:5}
+.chips{position:absolute;top:96px;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:6px;
+ justify-content:center;min-height:42px;z-index:5}
 .chip{background:var(--gold);border:3px solid var(--ink);border-radius:8px;padding:8px 15px;font-weight:900;font-size:21px;animation:chipin .18s}
 .chip.punc{margin-left:-12px}
-.tiles{position:absolute;top:168px;left:50%;transform:translateX(-50%);display:flex;flex-wrap:wrap;gap:8px;
- justify-content:center;max-width:92%;z-index:5}
+.tiles{position:absolute;top:168px;left:8px;right:8px;display:flex;flex-wrap:wrap;gap:8px;
+ justify-content:center;z-index:5}
 .tile{background:#fff8e6;border:3px solid var(--ink);border-radius:8px;padding:9px 15px;font-weight:800;
  font-size:21px;cursor:pointer;box-shadow:0 3px 0 var(--ink)}
 .tile:active{transform:translateY(2px);box-shadow:0 1px 0 var(--ink)}
@@ -1444,12 +1444,20 @@ function marioActor(sc){const wrap=el('div','mario');
 /* ============ 页面切换 ============ */
 /* 整窗等比放大铺满屏幕：去掉黑边，砖块/水管/字一起变大 */
 function fitGame(){const win=document.getElementById('gamewin');if(!win)return;
+ win.style.transform='none';
  const w=win.offsetWidth||1120,h=win.offsetHeight||665;
  const s=Math.min(window.innerWidth/w,window.innerHeight/h);
  win.style.transform='scale('+Math.max(0.32,Math.min(s,2.6)).toFixed(3)+')';}
-window.addEventListener('resize',()=>{if(document.getElementById('scr-game').classList.contains('active'))fitGame();});
+function fitSelect(){const p=document.querySelector('#scr-select .selpanel');if(!p)return;
+ p.style.transform='none';
+ const w=p.offsetWidth||720,h=p.offsetHeight||300;
+ const s=Math.min(window.innerWidth/w,window.innerHeight/h);
+ p.style.transform='scale('+Math.max(0.32,Math.min(s*0.82,2.3)).toFixed(3)+')';}
+window.addEventListener('resize',()=>{if(document.getElementById('scr-game').classList.contains('active'))fitGame();
+ if(document.getElementById('scr-select').classList.contains('active'))fitSelect();});
 function show(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');
- if(id==='#scr-game'){fitGame();setTimeout(fitGame,90);}}
+ if(id==='#scr-game'){fitGame();setTimeout(fitGame,90);}
+ if(id==='#scr-select'){fitSelect();setTimeout(fitSelect,90);}}
 function hideOvl(id){const e=document.getElementById(id);if(e)e.classList.remove('show');}
 function goSelect(){runCleanups();paused=false;['ovl-pause','ovl-result','modal-bank','modal-help'].forEach(hideOvl);
  pauseTimer();enterSelect();show('#scr-select');}
