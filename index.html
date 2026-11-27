@@ -28,6 +28,9 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;display:block}
 .btn.green{background:#7ed957}
 .btn.gray{background:#dcd6c8}
 .btn.small{font-size:14px;padding:7px 12px}
+#pack-picker{font-size:13px;padding:6px 8px;max-width:190px;cursor:pointer}
+#pack-upload-btn{border-color:#2e7d32;color:#2e7d32}
+#pack-delete{border-color:#c62828;color:#c62828;padding:7px 10px}
 .btn.mini{font-size:13px;padding:4px 10px;box-shadow:0 3px 0 var(--ink)}
 .btn.big{font-size:22px;padding:14px 26px;border-radius:12px}
 .btn small{display:block;font-size:12px;font-weight:600;margin-top:4px;opacity:.75}
@@ -352,6 +355,10 @@ s.parentNode.insertBefore(hm, s);
         <button class="btn small" id="scope-all">全选</button>
         <button class="btn small gray" id="scope-none">清空</button>
         <button class="btn small" id="scope-custom">✏️ 自定义词语范围</button>
+        <button class="btn small" id="pack-upload-btn">⬆ 上传词库包</button>
+        <select class="btn small" id="pack-picker" title="切换词库"><option value="__default__">默认词库</option></select>
+        <button class="btn small gray" id="pack-delete" style="display:none" title="删除选中的词库包">🗑</button>
+        <input type="file" id="pack-file" accept=".txt,.csv,.json,.md,text/plain,application/json" style="display:none">
         <span id="scope-status" class="scope-status"></span>
       </div>
     </div>
@@ -1899,7 +1906,94 @@ $('#bank-file').addEventListener('change',e=>{
   $('#bank-apply').click();$('#bank-msg').textContent+='（已读取文件：'+f.name+'）';};
  r.readAsText(f,'utf-8');e.target.value='';});
 
+
+/* ============ 词库包：上传 / 切换 / 删除（v11） ============ */
+const PACKS_KEY='marioPackLib_v1';
+function loadPacks(){try{const s=localStorage.getItem(PACKS_KEY);
+ if(s){const a=JSON.parse(s);if(Array.isArray(a))return a;}}catch(e){}
+ return [];}
+function savePacks(a){try{localStorage.setItem(PACKS_KEY,JSON.stringify(a));}catch(e){}}
+let PACKS=loadPacks();
+
+/* 解析词库包文本：优先 JSON（{name,items:[{en,zh,b,u}]} 或数组），否则按"英文 中文"逐行 */
+function parsePack(text,fname){
+ let obj=null;
+ try{obj=JSON.parse(text.replace(/^\ufeff/,''));}catch(e){}
+ if(obj){
+  let name,items;
+  if(Array.isArray(obj)){items=obj;name=(fname||'导入词库').replace(/\.[^.]+$/,'');}
+  else{items=obj.items||obj.words||[];name=obj.name||(fname||'导入词库').replace(/\.[^.]+$/,'');}
+  const out=[],seen=new Set();
+  (items||[]).forEach(it=>{
+   const en=String(it.en||it.word||it.english||'').trim();
+   const zh=String(it.zh||it.cn||it.chinese||it.meaning||'').trim();
+   if(!en||!zh)return;const k=en.toLowerCase();if(seen.has(k))return;seen.add(k);
+   const o={en,zh};if(it.b)o.b=String(it.b);if(it.u)o.u=Number(it.u)||undefined;out.push(o);});
+  return {name:name,items:out,bad:0};
+ }
+ const r=parseBank(text);
+ return {name:(fname||'导入词库').replace(/\.[^.]+$/,''),items:r.items,bad:r.bad};
+}
+function packBasename(){return (BANK&&BANK.name)||'默认词库';}
+function renderPackPicker(){
+ const sel=$('#pack-picker');if(!sel)return;
+ const cur=packBasename();
+ sel.innerHTML='<option value="__default__">默认词库</option>'+PACKS.map((p,i)=>
+  '<option value="'+i+'">'+String(p.name).replace(/[<>&"]/g,'')+'（'+p.items.length+'词）</option>').join('');
+ sel.value=(cur==='默认词库'||cur.indexOf('冀教版三起')===0)?'__default__':
+  (String(cur).indexOf('（')>=0?cur:'');
+ // 用 name 匹配（导入时把显示名写成 name（N词））
+ if(sel.value===''){
+  const idx=PACKS.findIndex(p=>(p.name+'（'+p.items.length+'词）')===cur||p.name===cur);
+  sel.value=idx>=0?String(idx):'__default__';
+ }
+ const del=$('#pack-delete');if(del)del.style.display=(sel.value==='__default__')?'none':'';
+}
+function switchPack(seed){
+ if(seed==='__default__'){
+  try{localStorage.removeItem('marioWordBank_v1');}catch(e){}
+  BANK=JSON.parse(JSON.stringify(DEFAULT_BANK));updateBankStatus();renderPackPicker();
+  toast('已切回默认词库：'+DEFAULT_BANK.name);return;
+ }
+ const p=PACKS[Number(seed)];if(!p){toast('词库未找到');return;}
+ BANK={name:p.name+'（'+p.items.length+'词）',items:JSON.parse(JSON.stringify(p.items))};
+ saveBank(BANK);renderPackPicker();toast('已切换到词库：'+p.name);
+}
+(function(){
+ const btn=$('#pack-upload-btn'),file=$('#pack-file'),sel=$('#pack-picker'),del=$('#pack-delete');
+ if(!btn||!file||!sel)return;
+ btn.addEventListener('click',()=>file.click());
+ file.addEventListener('change',e=>{
+  const f=e.target.files&&e.target.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=()=>{
+   try{
+    const p=parsePack(String(r.result||''),f.name);
+    if(!p.items||p.items.length<8){toast('词库包只解析到 '+(p.items?p.items.length:0)+' 个词，至少需要 8 个');return;}
+    const exist=PACKS.findIndex(x=>x.name===p.name);
+    if(exist>=0)PACKS[exist]=p;else PACKS.push(p);
+    savePacks(PACKS);
+    const idx=PACKS.findIndex(x=>x.name===p.name);
+    switchPack(String(idx));
+    toast('✔ 已导入词库「'+p.name+'」：'+p.items.length+' 词'+(p.bad?'（跳过 '+p.bad+' 行无效内容）':''));
+   }catch(err){toast('词库包读取失败：'+(err&&err.message||err));}
+  };
+  r.readAsText(f,'utf-8');e.target.value='';
+ });
+ sel.addEventListener('change',()=>switchPack(sel.value));
+ if(del)del.addEventListener('click',()=>{
+  const v=sel.value;if(v==='__default__')return;
+  const p=PACKS[Number(v)];if(!p)return;
+  if(!confirm('删除词库包「'+p.name+'」？默认词库不受影响。'))return;
+  PACKS.splice(Number(v),1);savePacks(PACKS);switchPack('__default__');
+  toast('已删除词库包：'+p.name);
+ });
+ renderPackPicker();
+})();
+/* ============ /词库包 ============ */
+
 /* ============ 其它交互 ============ */
+
 $('#btn-hidezh-title').addEventListener('click',toggleHideZh);
 $('#btn-hidezh').addEventListener('click',toggleHideZh);
 $('#btn-readmode-title').addEventListener('click',toggleReadMode);
